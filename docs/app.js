@@ -492,15 +492,73 @@
     lb.addEventListener('click', close);
   }
 
+  // ---------- Master Quiz pool & history ----------
+  const MASTER_KEY = 'nhbrc.master.v1';
+  const MASTER_SIZE = 25;
+  function masterPool() {
+    const pool = [];
+    for (const q of D.quizzes) {
+      const m = D.modules.find(x => x.id === q.moduleId);
+      for (const qq of q.questions) {
+        pool.push({ ...qq, moduleId: q.moduleId, moduleTitle: m?.title || q.title, moduleIcon: m?.icon || '❓' });
+      }
+    }
+    return pool;
+  }
+  function masterHistory() {
+    try { return JSON.parse(localStorage.getItem(MASTER_KEY)) || []; }
+    catch { return []; }
+  }
+  function masterSave(entry) {
+    const h = masterHistory();
+    h.unshift(entry);
+    localStorage.setItem(MASTER_KEY, JSON.stringify(h.slice(0, 100)));
+  }
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+  function fmtTime(ts) {
+    const d = new Date(ts);
+    return d.toLocaleString('en-ZA', { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  }
+
   function viewQuizList() {
     titleEl.textContent = 'Quiz';
     backBtn.classList.add('hidden');
     setActiveTab('quiz');
     const progress = store.load();
+    const pool = masterPool();
+    const hist = masterHistory();
+    const best = hist.reduce((m, h) => h.correct > m ? h.correct : m, 0);
+    const last = hist[0];
 
     let html = `<div class="hero" style="background:linear-gradient(135deg,#7c4f00,#f5b800)">
-      <h2>Test yourself</h2><p>Pick any topic and answer the questions.</p></div>
-      <div class="section-title">Quizzes</div>`;
+      <h2>Test yourself</h2><p>Pick any topic — or take the Master Quiz for a randomised mix.</p></div>
+
+      <a class="card master-card" data-action="master">
+        <h3>🏆 Master Quiz <span class="badge gold">${MASTER_SIZE} random</span></h3>
+        <div class="meta">${MASTER_SIZE} random questions from all ${pool.length} across every module — different every time.</div>
+        <div class="meta master-stats">
+          ${hist.length ? `Attempts: <strong>${hist.length}</strong>` : 'No attempts yet'}
+          ${best ? ` · Best: <strong>${best}/${MASTER_SIZE}</strong>` : ''}
+          ${last ? ` · Last: <strong>${last.correct}/${last.total}</strong> on ${escapeHtml(fmtTime(last.at))}` : ''}
+        </div>
+      </a>
+
+      ${hist.length ? `<div class="section-title">Master Quiz history</div>
+        <div class="master-history">${hist.slice(0, 10).map(h => `
+          <div class="hist-row">
+            <span class="hist-pct ${h.correct/h.total>=.8?'good':h.correct/h.total>=.6?'ok':'bad'}">${Math.round(h.correct/h.total*100)}%</span>
+            <span class="hist-score">${h.correct}/${h.total}</span>
+            <span class="hist-date">${escapeHtml(fmtTime(h.at))}</span>
+          </div>`).join('')}</div>` : ''}
+
+      <div class="section-title">Quizzes by module</div>`;
     for (const q of D.quizzes) {
       const m = D.modules.find(x => x.id === q.moduleId);
       const r = (progress.quizzes || {})[q.moduleId];
@@ -514,6 +572,72 @@
     view.innerHTML = html;
     view.querySelectorAll('[data-action="quiz"]').forEach(el =>
       el.addEventListener('click', () => route.go('quiz', el.dataset.id)));
+    view.querySelectorAll('[data-action="master"]').forEach(el =>
+      el.addEventListener('click', () => route.go('master', null)));
+  }
+
+  function viewMasterQuiz() {
+    const pool = masterPool();
+    const n = Math.min(MASTER_SIZE, pool.length);
+    const questions = shuffle(pool).slice(0, n);
+    titleEl.textContent = 'Master Quiz';
+    backBtn.classList.remove('hidden');
+    setActiveTab('quiz');
+    const startedAt = Date.now();
+
+    let answered = 0, correct = 0;
+    let html = `<div class="meta" style="margin-bottom:8px">🏆 ${n} random questions · pick the best answer · score is logged when you finish all questions</div>`;
+    questions.forEach((qq, qi) => {
+      html += `<div class="quiz-q" data-q="${qi}">
+        <p class="qstem"><span class="q-mod">${qq.moduleIcon} ${escapeHtml(qq.moduleTitle)}</span><br>${qi + 1}. ${escapeHtml(qq.q)}</p>
+        ${qq.opts.map((opt, oi) => `<button class="quiz-opt" data-q="${qi}" data-opt="${oi}">${escapeHtml(opt)}</button>`).join('')}
+      </div>`;
+    });
+    html += `<div id="quizScore"></div>
+      <div class="actions">
+        <button class="btn" data-action="restart">Generate a new master quiz</button>
+        <button class="btn secondary" data-action="back">Back</button>
+      </div>`;
+    view.innerHTML = html;
+
+    view.querySelectorAll('.quiz-opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const qi = +btn.dataset.q;
+        const oi = +btn.dataset.opt;
+        const qq = questions[qi];
+        const block = view.querySelector(`.quiz-q[data-q="${qi}"]`);
+        if (block.dataset.done) return;
+        block.dataset.done = '1';
+        answered++;
+        const opts = block.querySelectorAll('.quiz-opt');
+        opts.forEach((o, i) => {
+          o.disabled = true;
+          if (i === qq.a) o.classList.add('correct');
+          if (i === oi && oi !== qq.a) o.classList.add('wrong');
+        });
+        if (oi === qq.a) correct++;
+        const ex = document.createElement('div');
+        ex.className = 'quiz-explain';
+        ex.textContent = (oi === qq.a ? '✔ ' : '✘ ') + qq.why;
+        block.appendChild(ex);
+        if (answered === questions.length) {
+          const pct = Math.round(correct / questions.length * 100);
+          masterSave({ at: Date.now(), correct, total: questions.length, timeMs: Date.now() - startedAt });
+          const lbl = pct >= 80 ? 'Excellent — solid grasp' : pct >= 60 ? 'Good — review the misses' : 'Worth another study round';
+          const el = document.getElementById('quizScore');
+          el.innerHTML = `<div class="quiz-score">
+            <p class="pct">${pct}%</p>
+            <p class="lbl">${correct} / ${questions.length} · ${lbl}</p>
+            <p class="meta">Saved to your Master Quiz history.</p>
+          </div>`;
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
+    });
+    view.querySelectorAll('[data-action="restart"]').forEach(el =>
+      el.addEventListener('click', () => { route.history = []; route.current = { name: 'master', payload: null }; render(); }));
+    view.querySelectorAll('[data-action="back"]').forEach(el =>
+      el.addEventListener('click', () => route.back()));
   }
 
   function viewQuiz(modId) {
@@ -682,6 +806,7 @@
     if (name === 'quizlist') return 'quiz';
     if (name === 'article') return 'library';
     if (name === 'diagrams') return 'diagrams';
+    if (name === 'master') return 'quiz';
     return name;
   }
 
@@ -697,6 +822,7 @@
     if (name === 'library') return viewLibrary();
     if (name === 'article') return viewArticle(payload);
     if (name === 'diagrams') return viewDiagrams();
+    if (name === 'master') return viewMasterQuiz();
     return viewHome();
   }
 
@@ -737,6 +863,7 @@
     else if (h === 'progress') { route.current = { name: 'progress', payload: null }; }
     else if (h === 'library') { route.current = { name: 'library', payload: null }; }
     else if (h === 'diagrams') { route.current = { name: 'diagrams', payload: null }; }
+    else if (h === 'master') { route.current = { name: 'master', payload: null }; }
     else if (h.startsWith('m=')) { route.current = { name: 'module', payload: h.slice(2) }; }
     else if (h.startsWith('q=')) { route.current = { name: 'quiz', payload: h.slice(2) }; }
     else if (h.startsWith('a=')) { route.current = { name: 'article', payload: h.slice(2) }; }
