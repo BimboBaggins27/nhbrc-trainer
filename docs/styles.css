@@ -690,3 +690,16 @@ figcaption {
   margin-bottom: 4px;
   opacity: .85;
 }
+
+/* Disclaimer banner on home */
+.warn-banner {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: linear-gradient(135deg, rgba(245,184,0,.15), rgba(200,81,62,.15));
+  border: 1px solid rgba(245,184,0,.45);
+  padding: 12px 14px;
+}
+.warn-icon { font-size: 22px; line-height: 1.1; flex: 0 0 26px; }
+.warn-text { font-size: 13px; line-height: 1.4; }
+.warn-text strong { color: #f5d56a; display: block; margin-bottom: 4px; }

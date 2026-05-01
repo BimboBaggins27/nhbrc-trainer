@@ -75,6 +75,14 @@
           </svg>
         </div>
       </div>
+      <a class="card warn-banner" data-action="about">
+        <div class="warn-icon">⚠️</div>
+        <div class="warn-text">
+          <strong>Study material only — not a legal substitute.</strong>
+          Cross-check every clause against the latest published SANS 10400 part and the
+          current NHBRC Home Building Manual before any plan submission. Tap for sources →
+        </div>
+      </a>
       <a class="card source-card" data-action="about">
         <div class="source-row">
           <div class="source-icon">ℹ️</div>
@@ -85,7 +93,7 @@
           <div class="source-chev">›</div>
         </div>
         <div class="progressbar"><span style="width:${(readMods/totalMods*100).toFixed(0)}%"></span></div>
-        <div class="meta" style="margin-top:6px">${readMods} / ${totalMods} modules read</div>
+        <div class="meta" style="margin-top:6px">${readMods} / ${totalMods} modules read · ${(L.pdfs||[]).length} reference PDFs in Library</div>
       </a>
       <div class="section-title">Modules</div>
     `;
