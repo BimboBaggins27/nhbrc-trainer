@@ -1,0 +1,68 @@
+name: Regulations watch
+
+# Runs every Monday at 06:00 UTC (08:00 SAST) and on demand.
+# Detects changes in the SA building-regulations sources we care about and
+# opens (or updates) a single tracking issue if anything moved.
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run regulations watcher
+        run: python tools/check_updates.py
+
+      - name: Detect any changes
+        id: diff
+        shell: bash
+        run: |
+          if grep -q '🔄\|🆕' tools/REGS-WATCH-REPORT.md; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit baseline + report
+        if: always()
+        shell: bash
+        run: |
+          git config user.name "regs-watch-bot"
+          git config user.email "regs-watch@users.noreply.github.com"
+          git add tools/.regs-baseline.json tools/REGS-WATCH-REPORT.md
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "regs-watch: weekly baseline update ($(date -u +%Y-%m-%d))"
+            git push
+          fi
+
+      - name: Open / update tracking issue
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ vars.REGS_WATCH_ISSUE || 1 }}
+          body-file: tools/REGS-WATCH-REPORT.md
+        continue-on-error: true
+
+      - name: Fallback — create new issue if pinned issue missing
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-issue-from-file@v5
+        with:
+          title: "Regulations watch — changes detected"
+          content-filepath: tools/REGS-WATCH-REPORT.md
+          labels: regs-watch, needs-review
