@@ -115,6 +115,10 @@
 
     const totalMods = D.modules.length;
     const readMods = Object.keys(progress.read || {}).length;
+    const s = streakTick();
+    const streakBadge = (s.streak >= 2)
+      ? `<span class="streak-pill">🔥 ${s.streak}-day streak${s.best > s.streak ? ` (best ${s.best})` : ''}</span>`
+      : '';
 
     let html = `
       <div class="hero hero-flag">
@@ -150,7 +154,7 @@
           <div class="source-chev">›</div>
         </div>
         <div class="progressbar"><span style="width:${(readMods/totalMods*100).toFixed(0)}%"></span></div>
-        <div class="meta" style="margin-top:6px">${readMods} / ${totalMods} modules read · ${(L.pdfs||[]).length} reference PDFs in Library</div>
+        <div class="meta" style="margin-top:6px">${readMods} / ${totalMods} modules read · ${(L.pdfs||[]).length} reference PDFs · ${streakBadge || 'No streak yet — open daily to build one'}</div>
       </a>
       <div class="section-title">Modules</div>
     `;
@@ -1099,6 +1103,113 @@
       }));
   }
 
+  // ---------- Daily streak ----------
+  // Tracks consecutive days where the user opened the app — purely on-device.
+  const STREAK_KEY = 'nhbrc.streak.v1';
+  function streakState() {
+    try { return JSON.parse(localStorage.getItem(STREAK_KEY) || '{}'); }
+    catch { return {}; }
+  }
+  function streakTick() {
+    const today = new Date().toISOString().slice(0, 10);
+    const s = streakState();
+    if (s.lastDay === today) return s; // already counted
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    s.streak = (s.lastDay === yesterday) ? (s.streak || 0) + 1 : 1;
+    s.best = Math.max(s.best || 0, s.streak);
+    s.lastDay = today;
+    localStorage.setItem(STREAK_KEY, JSON.stringify(s));
+    return s;
+  }
+  // Tick on first authenticated render
+  if (A && A.isAuthenticated()) streakTick();
+
+  // ---------- Tools (calculators) ----------
+  function viewTools() {
+    titleEl.textContent = 'On-site tools';
+    backBtn.classList.add('hidden');
+    setActiveTab('tools');
+    if (!window.NHBRC_CALCULATORS) {
+      view.innerHTML = '<div class="empty">Calculators failed to load.</div>';
+      return;
+    }
+    window.NHBRC_CALCULATORS.view(escapeHtml, view);
+  }
+
+  // ---------- Privacy Policy (POPIA-aware draft) ----------
+  function viewPrivacy() {
+    titleEl.textContent = 'Privacy policy';
+    backBtn.classList.remove('hidden');
+    setActiveTab('home');
+    view.innerHTML = `<article class="lesson legal-page">
+      <h2>🔒 Privacy policy</h2>
+      <p class="meta">Effective ${escapeHtml(new Date().toISOString().slice(0,10))} · NHBRC Trainer · POPIA-aware draft</p>
+
+      <h3>Who we are</h3>
+      <p>NHBRC Trainer is operated by an independent author based in South Africa.
+      For privacy queries, contact via <a href="https://github.com/BimboBaggins27/nhbrc-trainer/issues" target="_blank" rel="noopener">github.com/BimboBaggins27/nhbrc-trainer/issues</a>.</p>
+
+      <h3>What we collect</h3>
+      <p>By default, this app collects <strong>nothing on a server</strong>. All study
+      progress, quiz scores, accounts and chat history are stored on your device using
+      browser localStorage. We do not run analytics, advertising trackers or third-party
+      cookies.</p>
+      <p>If you create an account, we hash your password client-side (PBKDF2-SHA256,
+      250 000 iterations) before saving. Plaintext passwords never leave your device.</p>
+      <p>If, in future, you purchase a paid licence, we will collect:</p>
+      <ul>
+        <li>Your email address (to deliver your activation link)</li>
+        <li>Your purchase reference (Paystack handles your card details directly — we never see them)</li>
+        <li>A licence key tied to your email</li>
+      </ul>
+      <p>That data is only used to validate your access and contact you about substantive
+      service or content updates. It is not sold or shared.</p>
+
+      <h3>How long we keep it</h3>
+      <ul>
+        <li>On-device data: until you clear your browser storage or uninstall the PWA.</li>
+        <li>Account / licence records (when paid backend is enabled): for as long as your
+        licence is active, plus 5 years for tax / consumer-protection records (Consumer
+        Protection Act, s55).</li>
+      </ul>
+
+      <h3>Your POPIA rights</h3>
+      <p>Under the Protection of Personal Information Act, 2013, you have the right to:</p>
+      <ul>
+        <li>Confirm whether we hold any personal information about you;</li>
+        <li>Request a copy of that information;</li>
+        <li>Request correction or deletion;</li>
+        <li>Object to processing;</li>
+        <li>Lodge a complaint with the Information Regulator
+          (<a href="https://inforegulator.org.za" target="_blank" rel="noopener">inforegulator.org.za</a>).</li>
+      </ul>
+      <p>Email any of these requests to the contact above; we'll respond within 30 days.</p>
+
+      <h3>Children</h3>
+      <p>This service is not directed at people under 18. If you believe we have
+      collected information about a minor without parental consent, contact us and we
+      will delete it.</p>
+
+      <h3>Cross-border transfer</h3>
+      <p>If you choose to enable the AI tutor backend, your questions are sent to
+      Anthropic's API (US-hosted). Anthropic's privacy policy applies to that step.
+      No personally identifying information is required to use the tutor; we send only
+      the question text plus a hashed user ID for rate-limiting.</p>
+
+      <h3>Cookies</h3>
+      <p>The app does not set any HTTP cookies. localStorage entries are device-local
+      and never transmitted.</p>
+
+      <h3>Updates to this policy</h3>
+      <p>If this policy changes substantively, we'll note the new effective date at the
+      top and surface a one-time banner inside the app. Continued use after the change
+      is your acceptance.</p>
+
+      <div class="actions"><button class="btn secondary" data-action="back">Back</button></div>
+    </article>`;
+    view.querySelectorAll('[data-action="back"]').forEach(el => el.addEventListener('click', () => route.back()));
+  }
+
   // ---------- Landing & auth ----------
 
   function viewLanding() {
@@ -1261,6 +1372,8 @@
     if (name === 'article') return 'library';
     if (name === 'master') return 'quiz';
     if (name === 'mock') return 'quiz';
+    if (name === 'tools') return 'tools';
+    if (name === 'privacy') return 'home';
     return name;
   }
 
@@ -1287,6 +1400,8 @@
     if (name === 'article') return viewArticle(payload);
     if (name === 'master') return viewMasterQuiz();
     if (name === 'mock')   return viewMockTest();
+    if (name === 'tools')  return viewTools();
+    if (name === 'privacy')return viewPrivacy();
     if (name === 'legal') return viewLegal();
     if (name === 'unlock') return viewUnlock(payload || 'general');
     return viewHome();
@@ -1311,12 +1426,14 @@
         <li>📱 Installable PWA — works offline once installed</li>
       </ul>
       <div class="price-row">
-        <div class="price"><span class="price-amount">R 399</span><span class="price-meta">once · lifetime</span></div>
-        <a class="btn primary big" href="${PAYSTACK_LINK}" target="_blank" rel="noopener">Buy lifetime — R 399</a>
+        <div class="price"><span class="price-amount">R 199</span><span class="price-meta">founder lifetime · first 50 only</span></div>
+        <a class="btn primary big" href="${PAYSTACK_LINK}" target="_blank" rel="noopener">Buy lifetime — R 199</a>
       </div>
+      <p class="meta" style="margin-top:6px">🚀 <strong>Founder pricing</strong>: R 199 once for the first 50 buyers (then R 399). One payment, all features, all future updates.</p>
       <p class="meta" style="margin-top:14px">After payment you'll receive an email with a one-tap activation link.
       Tap it on the same device you want to use the app on.</p>
       <p class="meta">Already paid? Open your activation email and tap the unlock link again.</p>
+      <p class="meta">7-day refund window if you're not satisfied. Email refund requests via the Terms page.</p>
       <div class="actions"><button class="btn secondary" data-action="back">Back</button></div>
     </article>`;
     view.querySelectorAll('[data-action="back"]').forEach(el =>
@@ -1414,9 +1531,26 @@
       card details directly and the app never sees them.</p>
 
       <h3>Refunds</h3>
-      <p>Lifetime purchases are refundable within 7 days of purchase if you have not
-      consumed substantial content. Email refund requests to the address listed on the
-      site checkout page.</p>
+      <p>Lifetime purchases are refundable within <strong>7 days of purchase</strong>
+      if you have not consumed substantial content (rule of thumb: fewer than 25%
+      of modules opened). Email the contact address with your purchase reference;
+      processed within 5 business days back to your original payment method via
+      Paystack. The 7-day cooling-off mirrors s44 of the Consumer Protection Act
+      where applicable.</p>
+      <p>Subscription users can cancel at any time; the current period runs to its
+      end and no future charge is made.</p>
+
+      <h3>Governing law &amp; dispute resolution</h3>
+      <p>These Terms are governed by the laws of the Republic of South Africa. The
+      parties consent to the non-exclusive jurisdiction of the High Court (Gauteng
+      Division). Before litigation, both parties agree to attempt good-faith resolution
+      via written correspondence within 30 days of dispute notice. Where the matter
+      involves consumer rights, the National Consumer Commission and tribunal procedures
+      under the Consumer Protection Act, 2008 apply.</p>
+
+      <h3>Privacy</h3>
+      <p>See the separate <a data-action="privacy">Privacy policy</a> for full details on
+      what data is collected, how it is stored, and your POPIA rights.</p>
 
       <h3>Contact</h3>
       <p>Issues, factual corrections, or commercial enquiries: please open an issue at
@@ -1427,6 +1561,8 @@
     </article>`;
     view.querySelectorAll('[data-action="back"]').forEach(el =>
       el.addEventListener('click', () => route.back()));
+    view.querySelectorAll('[data-action="privacy"]').forEach(el =>
+      el.addEventListener('click', (e) => { e.preventDefault(); route.go('privacy'); }));
   }
 
   // Account button — logout + admin shortcut
@@ -1462,6 +1598,7 @@
     route.history = [];
     if (r === 'quiz') route.current = { name: 'quizlist', payload: null };
     else if (r === 'library') route.current = { name: 'library', payload: null };
+    else if (r === 'tools')   route.current = { name: 'tools', payload: null };
     else route.current = { name: r, payload: null };
     render();
   }));

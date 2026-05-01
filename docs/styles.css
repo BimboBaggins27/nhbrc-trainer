@@ -72,7 +72,7 @@ main {
 
 .tabbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
-  display: grid; grid-template-columns: repeat(5, 1fr);
+  display: grid; grid-template-columns: repeat(6, 1fr);
   background: var(--surface);
   border-top: 1px solid var(--border);
   padding-bottom: env(safe-area-inset-bottom);
@@ -721,6 +721,66 @@ figcaption {
 .hist-pct.bad  { background: rgba(200,81,62,.18); color: #ff9b87; }
 .hist-score { font-variant-numeric: tabular-nums; opacity: .85; }
 .hist-date { opacity: .7; font-size: 12px; }
+/* Streaks */
+.streak-pill {
+  display: inline-block;
+  background: rgba(245,184,0,.15);
+  color: #f5d56a;
+  border: 1px solid rgba(245,184,0,.45);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+/* Calculators */
+.calc-form {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  margin: 10px 0 14px;
+}
+.calc-field {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.calc-field input,
+.calc-field select {
+  font-size: 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.05);
+  color: var(--ink, #e8eee9);
+  font-family: inherit;
+}
+.calc-field input:focus, .calc-field select:focus { outline: 2px solid #0b6e3f; outline-offset: 1px; }
+.calc-out {
+  display: grid; gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.calc-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed rgba(255,255,255,.07);
+}
+.calc-row:last-child { border-bottom: none; }
+.calc-row.hilite {
+  background: rgba(11,110,63,.18);
+  margin: 0 -16px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border-bottom: none;
+}
+.calc-row span { color: var(--muted); font-size: 13px; }
+.calc-row strong { font-size: 16px; color: #6fdc9a; font-variant-numeric: tabular-nums; }
+
 /* Mock test */
 .mock-card {
   background: linear-gradient(135deg, #002b00, #0b6e3f);
