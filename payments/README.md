@@ -36,6 +36,7 @@ back here to validate.
    wrangler secret put PAYSTACK_SECRET     # sk_live_... or sk_test_...
    wrangler secret put LICENSE_SIGNING_KEY # any 32+ char random string
    wrangler secret put RESEND_API_KEY      # re_...
+   wrangler secret put ANTHROPIC_API_KEY   # sk-ant-...  (for the in-app AI tutor)
    ```
 
 6. **Deploy:**
@@ -47,7 +48,12 @@ back here to validate.
 7. **Wire the URL into the app:**
    - Open `docs/license.js`
    - Set `const API_BASE = 'https://nhbrc-payments.<you>.workers.dev'`
+   - Open `docs/chat.js` and set the same URL in `CHAT_API`
    - Commit + push → GitHub Pages picks it up
+
+The same Worker handles three concerns:
+- `/paystack/webhook`, `/license/activate` — payments + licensing
+- `/chat` — Claude proxy for the in-app AI tutor (uses `ANTHROPIC_API_KEY`)
 
 8. **Configure Paystack:**
    - Create a Paystack Hosted Checkout page (Dashboard → Pay Pages)
