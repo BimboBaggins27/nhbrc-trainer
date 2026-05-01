@@ -23,10 +23,12 @@
   const SESSION_KEY = 'nhbrc.session.v1';
   const PENDING_KEY = 'nhbrc.pending.v1';
   const AUTH_API = ''; // e.g. 'https://nhbrc-payments.<you>.workers.dev'
-  // Master account — auto-seeded on first run. Has 'master' role: bypasses
-  // the paywall, sees the user list, can grant comp licenses.
+  // Master role is granted to the first user that signs up with this username.
+  // No hardcoded password — pick your own at signup. This means anyone freshly
+  // installing the app must create their own RU1 account with their own
+  // password before they can use master features. Per-device isolation
+  // means another device's RU1 cannot affect yours.
   const MASTER_USERNAME = 'RU1';
-  const MASTER_PASSWORD = 'RU1';
   const subs = new Set();
 
   function load(k, def) {
@@ -62,49 +64,43 @@
     return normalizeId(s) === MASTER_USERNAME.toLowerCase();
   }
 
-  // Auto-seed master user on first run (idempotent — only runs if missing).
-  async function seedMaster() {
-    const users = load(USERS_KEY, {});
-    const k = MASTER_USERNAME.toLowerCase();
-    if (users[k]) return;
-    const { salt, hash } = await hashPassword(MASTER_PASSWORD);
-    users[k] = {
-      id: k, username: MASTER_USERNAME, email: null,
-      salt, hash, verified: true, role: 'master',
-      createdAt: new Date().toISOString(),
-    };
-    save(USERS_KEY, users);
-  }
-  // Fire-and-forget; await-safe everywhere because it's idempotent.
-  seedMaster();
+  // No auto-seed of master credentials. Master role is awarded to the
+  // first user that signs up with the master username (see signup() below).
 
   // ---------- public API ----------
 
-  async function signup(email, password) {
-    email = (email || '').trim().toLowerCase();
-    if (!validEmail(email)) return { ok: false, error: 'Enter a valid email.' };
-    if (isMasterId(email)) return { ok: false, error: 'That username is reserved.' };
-    if (!password || password.length < 8) return { ok: false, error: 'Password must be at least 8 characters.' };
+  async function signup(emailOrUsername, password) {
+    const id = (emailOrUsername || '').trim().toLowerCase();
+    if (!id) return { ok: false, error: 'Enter an email or username.' };
+    // Allow either a real email OR the master username.
+    const isMaster = isMasterId(id);
+    if (!validEmail(id) && !isMaster) return { ok: false, error: 'Use a valid email (or your master username).' };
+    if (!password || password.length < 6) return { ok: false, error: 'Password must be at least 6 characters.' };
 
     if (AUTH_API) {
       const r = await fetch(`${AUTH_API}/auth/signup`, {
         method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: id, password, isMaster }),
       });
       const j = await r.json();
       return { ok: r.ok, ...j };
     }
 
     const users = load(USERS_KEY, {});
-    if (users[email] && users[email].verified) {
-      return { ok: false, error: 'An account with this email already exists. Try logging in.' };
+    if (users[id] && users[id].verified) {
+      return { ok: false, error: 'An account with that ID already exists. Try logging in.' };
     }
     const { salt, hash } = await hashPassword(password);
     const code = code6();
     const pending = load(PENDING_KEY, {});
-    pending[email] = { salt, hash, code, expiresAt: Date.now() + 30 * 60 * 1000 };
+    pending[id] = {
+      salt, hash, code,
+      expiresAt: Date.now() + 30 * 60 * 1000,
+      role: isMaster ? 'master' : 'user',
+      isUsername: !validEmail(id),
+    };
     save(PENDING_KEY, pending);
-    return { ok: true, code, devMode: true };
+    return { ok: true, code, devMode: true, isMaster };
   }
 
   async function verify(email, code) {
@@ -124,20 +120,32 @@
     }
     const pending = load(PENDING_KEY, {});
     const p = pending[email];
-    if (!p) return { ok: false, error: 'No pending signup for this email — sign up again.' };
+    if (!p) return { ok: false, error: 'No pending signup found — sign up again.' };
     if (Date.now() > p.expiresAt) {
       delete pending[email]; save(PENDING_KEY, pending);
       return { ok: false, error: 'Verification code expired — sign up again.' };
     }
     if (p.code !== code) return { ok: false, error: 'Wrong code. Try again.' };
     const users = load(USERS_KEY, {});
+    const isUsername = p.isUsername || !validEmail(email);
     users[email] = {
-      email, salt: p.salt, hash: p.hash, verified: true,
+      id: email,
+      username: isUsername ? email.toUpperCase() : null,
+      email: isUsername ? null : email,
+      salt: p.salt, hash: p.hash, verified: true,
+      role: p.role || 'user',
       createdAt: new Date().toISOString(),
     };
     save(USERS_KEY, users);
     delete pending[email]; save(PENDING_KEY, pending);
-    save(SESSION_KEY, { email, verified: true, createdAt: users[email].createdAt });
+    save(SESSION_KEY, {
+      id: users[email].id,
+      username: users[email].username,
+      email: users[email].email,
+      role: users[email].role,
+      verified: true,
+      createdAt: users[email].createdAt,
+    });
     notify();
     return { ok: true };
   }
@@ -158,8 +166,6 @@
       if (r.ok) { save(SESSION_KEY, j.user); notify(); }
       return { ok: r.ok, ...j };
     }
-    // For master, ensure the seed has run before lookup
-    if (isMasterId(id)) await seedMaster();
     const users = load(USERS_KEY, {});
     const u = users[id];
     if (!u) return { ok: false, error: 'No account found.' };
