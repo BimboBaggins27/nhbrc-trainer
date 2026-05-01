@@ -1,0 +1,24 @@
+# Source PDF — large and copyrighted, fetch with tools/extract_pdf.py if needed
+SANS10400A.pdf
+
+# Derived data — regenerate by running tools/extract_pdf.py
+sans_pages.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# Local visual-test artefacts
+tools/screenshots/
+
+# Node
+node_modules/
