@@ -204,6 +204,83 @@ window.NHBRC_QUIZ_EXTRA = {
     { q: "Owner-builder must:", opts:["Skip enrolment","Apply for owner-builder exemption from NHBRC","Hire NHBRC builder","SABS approval"], a:1, why:"Owner-builder exemption granted by NHBRC; home still recorded." },
   ],
 
+  // ---------- New Part-specific module quizzes ----------
+  publicsafety: [
+    { q: "Min pool barrier height:", opts:["900 mm","1.0 m","1.2 m","1.5 m"], a:2, why:"Part D — barrier ≥ 1.2 m, no opening > 100 mm Ø." },
+    { q: "Pool gate latch height (above ground):", opts:["600 mm","900 mm","1.2 m","1.5 m"], a:2, why:"Latch ≥ 1.2 m AFFL — out of children's reach. Self-closing, self-latching." },
+    { q: "Balustrade trigger above floor:", opts:["300 mm","600 mm","1.0 m","1.5 m"], a:2, why:"Required where the level change exceeds 1.0 m." },
+    { q: "Max sphere through balustrade infill:", opts:["50 mm","100 mm","150 mm","200 mm"], a:1, why:"100 mm sphere must not pass through (child-safety rule)." },
+  ],
+  demolition: [
+    { q: "Notice of intention to commence demolition:", opts:["6 hrs","24 hrs","7 days","Same day"], a:1, why:"Demolition is 'building work' — Reg A22 24-hour notice still applies." },
+    { q: "Hoarding height on the public-side of a demolition site:", opts:["1.0 m","1.5 m","2.0 m","2.5 m"], a:2, why:"≥ 2.0 m hoarding to protect the public." },
+    { q: "Asbestos survey before demolition:", opts:["Not required","Required + safe-disposal plan (DOL Asbestos Regs)","Only if > 50 m²","Only on commercial"], a:1, why:"Asbestos Abatement Regs (Dept of Labour) — survey + safe disposal required before demolition begins." },
+    { q: "Disconnect utilities before demolition?", opts:["Optional","Mandatory — written confirmation from each utility","Only electricity","Only water"], a:1, why:"All utilities (electricity, gas, water, sewer) disconnected with written confirmation each." },
+  ],
+  siteops: [
+    { q: "Builder's site sanitary facilities required:", opts:["Optional","≥ 1 WC per 30 workers (typical guide)","≥ 1 per 100","Off-site only"], a:1, why:"Reg F11 — adequate sanitary facilities for builders on site, typically 1 WC per 30 workers." },
+    { q: "Site protection of adjoining property is responsibility of:", opts:["Local authority","Owner of construction site","NHBRC","SABS"], a:1, why:"Reg F2 — owner is responsible for ensuring construction does not endanger or damage adjoining property." },
+    { q: "Builder's sheds must:", opts:["Be sub-standard","Be located, durable, and have sanitation per F10","Have no rules","Be insulated"], a:1, why:"Reg F10 — covers location, durability and sanitation provisions." },
+    { q: "Geotechnical investigation is certified by:", opts:["Owner","Builder","Pr.Sci.Nat (SACNASP)","Architect"], a:2, why:"Reg F3 + 2008 def — competent person, typically registered with SACNASP." },
+  ],
+  excavations: [
+    { q: "Sides of excavations deeper than … must be sloped/shored:", opts:["0.5 m","1.0 m","1.5 m","3.0 m"], a:2, why:"Reg G2 — > 1.5 m deep must be sloped, shored or stepped — never vertical and unsupported." },
+    { q: "Spoil heaps clear of excavation edge by at least:", opts:["No requirement","≥ 0.5 m","≥ 1.0 m","≥ 3.0 m"], a:2, why:"Reg G2 — ≥ 1 m setback to prevent edge collapse." },
+    { q: "Open trench on a public road must be:", opts:["Left open","Barricaded + lit at night","Marked with cones","Filled instantly"], a:1, why:"Reg G + Part D public safety — barricade + lighting at night required." },
+    { q: "Underpinning adjacent existing foundations is required when:", opts:["Always","Excavation may undermine adjoining structure","Never","Owner choice"], a:1, why:"Reg G1 — owner must protect adjoining property from subsidence." },
+  ],
+  floors: [
+    { q: "Min thickness of a domestic ground-bearing slab:", opts:["50 mm","75 mm","100 mm","150 mm"], a:2, why:"≥ 100 mm typical for domestic ground-bearing slab on hardcore." },
+    { q: "Standard mesh ref for domestic ground-bearing slab:", opts:["Ref 100","Ref 193","Ref 245","Ref 311"], a:1, why:"Ref 193 (4.5 mm @ 200 mm both ways) is standard." },
+    { q: "FFL above outside ground level:", opts:["≥ 50 mm","≥ 100 mm","≥ 150 mm","≥ 300 mm"], a:2, why:"≥ 150 mm above outside ground for damp / splash protection." },
+    { q: "DPM (damp-proof membrane) location in slab build-up:", opts:["Above slab","Below slab on hardcore","Inside slab","Not required"], a:1, why:"DPM laid on blinded hardcore, sealed at all penetrations, before pouring slab." },
+  ],
+  glazing: [
+    { q: "Glazing within … of FFL must be safety glass:", opts:["500 mm","800 mm","1.2 m","1.5 m"], a:1, why:"≤ 800 mm AFFL — toughened or laminated safety glass per SANS 10137." },
+    { q: "Acceptable safety-glass types:", opts:["Single float only","Toughened or laminated","Wired only","Patterned only"], a:1, why:"Toughened (heat-strengthened) or laminated (PVB interlayer)." },
+    { q: "Glazing within … horizontally of a door edge must be safety glass:", opts:["50 mm","250 mm","500 mm","1.0 m"], a:2, why:"500 mm horizontally + up to 1.5 m AFFL — sidelights." },
+    { q: "Glass thickness selection follows:", opts:["Owner preference","SANS 10137 wind-load tables","Random","Always 6 mm"], a:1, why:"Per SANS 10137 — depends on pane size, support condition, wind zone." },
+  ],
+  nonwater: [
+    { q: "Min separation between a pit/digester and any borehole:", opts:["5 m","15 m","30 m","100 m"], a:2, why:"≥ 30 m separation from any potable-water source." },
+    { q: "VIP vent pipe min Ø:", opts:["25 mm","50 mm","100 mm","150 mm"], a:1, why:"VIP vent ≥ 50 mm Ø, with fly-screen at top." },
+    { q: "VIP vent terminal ≥ … above the highest surrounding roof point:", opts:["100 mm","300 mm","500 mm","1.0 m"], a:2, why:"≥ 500 mm above highest local roof point — adequate stack draft." },
+    { q: "On-site digester (septic) detail follows:", opts:["No standard","SANS 10252","SABS 0400 only","Owner discretion"], a:1, why:"SANS 10252 — water supply / drainage including septic + soakaway." },
+  ],
+  stormwater: [
+    { q: "Min Ø domestic downpipe:", opts:["50 mm","75 mm","100 mm","150 mm"], a:1, why:"≥ 75 mm Ø downpipe for domestic gutters." },
+    { q: "Downpipe spacing along a gutter:", opts:["Every 6 m","Every 12 m","Every 20 m","No limit"], a:1, why:"≥ 1 downpipe per 12 m of gutter typical." },
+    { q: "Downpipe outlet should drain ≥ … from foundations:", opts:["100 mm","300 mm","600 mm","1.5 m"], a:2, why:"≥ 600 mm clear of foundations to prevent saturation under footing." },
+    { q: "Stormwater MAY NOT discharge into:", opts:["Soakaway","Public stormwater main","Foul sewer","Channel"], a:2, why:"Never combine stormwater with foul sewer — risk of overload + contamination." },
+    { q: "Design rainfall intensity for SA gutter sizing typically:", opts:["10 mm/hr","30 mm/hr","65 mm/hr","150 mm/hr"], a:2, why:"≈ 65 mm/hr design intensity in most SA regions for catchment-area sizing." },
+  ],
+  disabled: [
+    { q: "Max ramp gradient (Part S):", opts:["1:8","1:10","1:12","1:20"], a:2, why:"1:12 max for accessibility ramps; intermediate landings every 9 m run." },
+    { q: "Min clear opening of an accessible door:", opts:["600 mm","700 mm","800 mm","900 mm"], a:2, why:"≥ 800 mm clear opening (lever handle 800-1100 mm AFFL)." },
+    { q: "Min ramp width for two wheelchairs to pass:", opts:["1.0 m","1.2 m","1.5 m","2.0 m"], a:2, why:"≥ 1.5 m where two wheelchairs pass; 1.1 m single direction." },
+    { q: "Accessible WC pan rim height AFFL:", opts:["380 mm","430 mm","480 mm","550 mm"], a:2, why:"480 mm pan rim height — wheelchair transfer-friendly." },
+    { q: "Threshold height max in accessible doorway:", opts:["6 mm","12 mm","20 mm","25 mm"], a:1, why:"≤ 12 mm threshold (chamfered)." },
+  ],
+  refuse: [
+    { q: "Refuse storage room must have:", opts:["Carpet","Wash-down water + floor drain + impervious finishes","No drainage","Wallpaper"], a:1, why:"Wash-down provision + floor drain + impervious washable wall/floor finishes." },
+    { q: "Refuse chute min Ø:", opts:["300 mm","450 mm","600 mm","1.0 m"], a:1, why:"≥ 450 mm Ø chute (commonly 600 mm in larger blocks)." },
+    { q: "Door from refuse room into corridor — fire rating:", opts:["No rating","30-min FR","60-min FR","120-min FR"], a:2, why:"60-min FR self-closing door (cross-ref Part T)." },
+    { q: "Refuse access route MUST NOT cross:", opts:["Plant rooms","Stairwells","Kitchen / food-prep areas","Lobbies"], a:2, why:"Hygiene — refuse never traverses food preparation or service areas." },
+  ],
+  spaceheat: [
+    { q: "Hearth in front of fireplace opening — min projection:", opts:["100 mm","200 mm","300 mm","500 mm"], a:2, why:"Part V — non-combustible hearth ≥ 300 mm in front, ≥ 150 mm each side." },
+    { q: "Hearth thickness for solid-fuel fireplace:", opts:["50 mm","75 mm","125 mm","200 mm"], a:2, why:"≥ 125 mm thick for solid fuel; reduced to 50 mm for closed gas appliances." },
+    { q: "Solid-fuel chimney must extend above any roof within 3 m by:", opts:["100 mm","300 mm","600 mm","1 m above + ≥600 mm above ridge"], a:3, why:"≥ 1 m above any roof within 3 m horizontally AND ≥ 600 mm above the ridge." },
+    { q: "Single-skin metal flue clearance to combustible material:", opts:["10 mm","25 mm","50 mm","150 mm"], a:2, why:"≥ 50 mm clearance single-skin; 25 mm for double-skin." },
+  ],
+  fireinst: [
+    { q: "Hose-reel coverage requirement:", opts:["Every point on each storey within 30 m of nozzle","Within 50 m","Within 10 m","Front of building only"], a:0, why:"≤ 30 m hose reach to every point on each storey." },
+    { q: "Hose-reel hose specs:", opts:["10 m × 12 mm","30 m × 19 mm","50 m × 25 mm","60 m × 50 mm"], a:1, why:"≥ 30 m × 19 mm Ø hose with control nozzle." },
+    { q: "Hose-reel pressure / flow at nozzle:", opts:["100 kPa, 0.1 L/s","300 kPa, 0.5 L/s","500 kPa, 5 L/s","1 MPa, 10 L/s"], a:1, why:"≥ 300 kPa pressure and ≥ 0.5 L/s flow." },
+    { q: "Fire hydrant flow rate at 300 kPa:", opts:["1 L/s","5 L/s","25 L/s","100 L/s"], a:2, why:"≥ 25 L/s at 300 kPa pressure." },
+    { q: "Sprinkler systems designed to:", opts:["SANS 10287","SANS 10137","SANS 10252","SANS 10100"], a:0, why:"SANS 10287 + SANS 10400-W — sprinkler system design." },
+  ],
+
   warranty: [
     { q: "Major structural defect cover:", opts:["1 yr","3 yr","5 yr","10 yr"], a:2, why:"5 years from occupation/transfer." },
     { q: "Roof leak cover:", opts:["3 m","6 m","12 m","5 yr"], a:2, why:"12 months." },

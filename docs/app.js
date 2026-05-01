@@ -5,13 +5,43 @@
   const articleById = Object.fromEntries((L.articles || []).map(a => [a.id, a]));
 
   // Merge quiz-extra.js questions into D.quizzes once, at startup.
+  // For modules without a base quiz entry, auto-create one so every module
+  // shows up on the Quiz tab.
   (function mergeExtras() {
     const extra = window.NHBRC_QUIZ_EXTRA || {};
     for (const mid of Object.keys(extra)) {
-      const q = D.quizzes.find(x => x.moduleId === mid);
-      if (q) q.questions = q.questions.concat(extra[mid]);
+      let q = D.quizzes.find(x => x.moduleId === mid);
+      if (!q) {
+        const m = D.modules.find(x => x.id === mid);
+        q = { moduleId: mid, title: m ? m.title : mid, questions: [] };
+        D.quizzes.push(q);
+      }
+      q.questions = q.questions.concat(extra[mid]);
     }
   })();
+
+  // Single source of truth for module order — used by home, quiz list,
+  // progress, and regulations. Follows SANS 10400 / NBR alphabet:
+  //   Intro → Part A admin → Parts B → XA in standard order → workflow → warranty
+  const MODULE_ORDER = [
+    'intro', 'parts',
+    'occupancy', 'plans', 'competent',
+    'structural', 'dimensions',
+    'publicsafety', 'demolition', 'siteops',
+    'excavations', 'foundations', 'floors',
+    'walls', 'roofs', 'stairs',
+    'glazing', 'lightvent',
+    'drainage', 'nonwater', 'stormwater',
+    'disabled',
+    'fire', 'refuse', 'spaceheat', 'fireinst',
+    'energy',
+    'process', 'warranty',
+  ];
+  const ORDER_INDEX = Object.fromEntries(MODULE_ORDER.map((id, i) => [id, i]));
+  function moduleOrderKey(id) { return ORDER_INDEX[id] ?? 999; }
+  // Sort the in-memory copies once at startup so every view sees the same order.
+  D.modules.sort((a, b) => moduleOrderKey(a.id) - moduleOrderKey(b.id));
+  D.quizzes.sort((a, b) => moduleOrderKey(a.moduleId) - moduleOrderKey(b.moduleId));
 
   // Shuffle answer options of a question while keeping `a` (correct index)
   // pointing at the right option afterwards.
