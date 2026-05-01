@@ -840,6 +840,272 @@ window.NHBRC_DATA = {
         ]}
       ],
       keyTerms: ["warranty", "structural defect", "Warranty Fund", "Happy Letter", "de-registration"]
+    },
+
+    // ---------- Additional Part-specific modules (D, F, J, N, Q, S, U, V, W) ----------
+    {
+      id: "demolition", icon: "💥", title: "Demolition (Part E)",
+      summary: "Safely taking down a structure — notice, hoarding, dust control, services disconnection.",
+      tag: "Part E",
+      sections: [
+        { h: "Scope of Part E" },
+        { p: "Demolition is treated as 'building work' under the Act — plans, notice and competent-person sign-off all apply. The objective is preventing collapse, debris hazards and damage to adjoining property." },
+        { h: "Pre-demolition checklist (E1, E2)" },
+        { list: [
+          "Disconnect electricity, gas, water and sewer — written confirmation from each utility.",
+          "Survey and protect adjoining structures (party walls especially).",
+          "Hoarding ≥ 2.0 m on the public side; warning signs.",
+          "Asbestos / hazardous-material survey + safe-disposal plan (DOL Asbestos Regs).",
+          "Notice of intention — at least 24 hours per Reg A22."
+        ]},
+        { svg: `<svg viewBox="0 0 320 180" width="100%" style="max-width:340px"><defs><pattern id="hatch1" width="6" height="6" patternUnits="userSpaceOnUse"><path d="M 0 6 L 6 0" stroke="#888" stroke-width="0.8"/></pattern></defs><rect x="40" y="40" width="100" height="120" fill="url(#hatch1)" stroke="#0b6e3f" stroke-width="2"/><text x="90" y="105" font-size="11" text-anchor="middle" fill="#0b6e3f" font-weight="700">EXISTING</text><text x="90" y="120" font-size="9" text-anchor="middle" fill="#0b6e3f">to be demolished</text><rect x="160" y="40" width="100" height="120" fill="none" stroke="#888" stroke-dasharray="4 3"/><text x="210" y="100" font-size="10" text-anchor="middle" fill="#666">Adjoining</text><text x="210" y="115" font-size="10" text-anchor="middle" fill="#666">protect!</text><rect x="20" y="160" width="280" height="6" fill="#7c4f00"/><text x="160" y="175" font-size="9" text-anchor="middle" fill="#7c4f00">Hoarding ≥ 2.0 m on public boundary</text></svg>`, caption: "Hoarding + party-wall protection plan." },
+        { h: "On-site execution" },
+        { list: [
+          "Top-down sequence — do not under-mine load paths.",
+          "Wet-down dust at source, especially in built-up areas.",
+          "Daily clearance of debris from public way.",
+          "Final site cleaning per Reg F9."
+        ]}
+      ],
+      keyTerms: ["demolition", "hoarding", "asbestos survey", "Reg E", "DOL"]
+    },
+    {
+      id: "excavations", icon: "⛏️", title: "Excavations (Part G)",
+      summary: "Open trenches, basements and bulk earthworks — keeping people, services and adjoining property safe.",
+      tag: "Part G",
+      sections: [
+        { h: "General stability requirement (G1)" },
+        { p: "Where any excavation is carried out, the owner must take adequate precautionary measures to maintain the safety and stability of any property or service that could be impaired." },
+        { h: "Deemed-to-satisfy detail (G2)" },
+        { list: [
+          "Sides of excavations > 1.5 m deep must be sloped, shored, or stepped — never left vertical and unsupported.",
+          "Spoil heaps and stored material kept ≥ 1.0 m clear of the edge.",
+          "Where adjoining structures could be undermined, owner must protect them against subsidence.",
+          "Open trenches on or near a public road: barricade + lighting at night."
+        ]},
+        { svg: `<svg viewBox="0 0 320 200" width="100%" style="max-width:360px"><rect x="0" y="20" width="320" height="80" fill="#d8c08a"/><polygon points="80,100 120,180 200,180 240,100" fill="#fff" stroke="#0b6e3f" stroke-width="2"/><text x="160" y="160" font-size="11" text-anchor="middle" fill="#0b6e3f" font-weight="700">EXCAVATION</text><line x1="120" y1="180" x2="80" y2="100" stroke="#c8513e" stroke-width="2"/><line x1="200" y1="180" x2="240" y2="100" stroke="#c8513e" stroke-width="2"/><text x="64" y="140" font-size="9" fill="#c8513e">slope</text><text x="60" y="100" font-size="9" fill="#0b6e3f">≥ 1 m</text><line x1="40" y1="100" x2="80" y2="100" stroke="#0b6e3f" stroke-width="1" stroke-dasharray="3 2"/><circle cx="30" cy="80" r="6" fill="#7c4f00"/><circle cx="20" cy="84" r="5" fill="#7c4f00"/><circle cx="40" cy="84" r="5" fill="#7c4f00"/><text x="30" y="70" font-size="8" text-anchor="middle" fill="#7c4f00">spoil</text><text x="160" y="195" font-size="9" text-anchor="middle" fill="#666">Sides sloped or shored, spoil set back ≥ 1 m</text></svg>`, caption: "Excavation deemed-to-satisfy." },
+        { h: "Geotechnical investigation" },
+        { p: "Required (and certified by a competent person, typically Pr.Sci.Nat / SACNASP) on dolomitic land, suspect compressible / collapsing / heaving sites, and any deep / multi-level basement." }
+      ],
+      keyTerms: ["G1", "G2", "shoring", "1.5 m", "spoil setback", "SACNASP"]
+    },
+    {
+      id: "stormwater", icon: "🌧️", title: "Stormwater disposal (Part R)",
+      summary: "Roof gutters, downpipes, surface channels — preventing water damage and erosion.",
+      tag: "Part R",
+      sections: [
+        { h: "General requirement (R1)" },
+        { p: "Stormwater from any roof or paved area must be disposed of in a manner that does not endanger health, damage the building, the adjoining land, or the public way." },
+        { h: "Roof drainage detail" },
+        { list: [
+          "Gutters sized for the catchment area × design rainfall (≈ 65 mm/hr in most SA).",
+          "≥ 1 downpipe per 12 m of gutter; downpipe Ø ≥ 75 mm for domestic.",
+          "Discharge to a soakaway, channel or municipal stormwater system — not into the sewer.",
+          "Downpipe outlets to drain at least 600 mm clear of foundations."
+        ]},
+        { svg: `<svg viewBox="0 0 320 200" width="100%" style="max-width:360px"><polygon points="40,80 160,30 280,80 280,90 40,90" fill="#7c4f00" stroke="#5a3a17" stroke-width="1"/><rect x="40" y="90" width="240" height="80" fill="#e8e0c8" stroke="#666"/><rect x="36" y="80" width="248" height="6" fill="#888"/><text x="160" y="78" font-size="8" text-anchor="middle" fill="#fff">gutter</text><rect x="56" y="86" width="6" height="84" fill="#2a6cb5"/><rect x="262" y="86" width="6" height="84" fill="#2a6cb5"/><line x1="59" y1="170" x2="59" y2="185" stroke="#2a6cb5" stroke-width="3" marker-end="url(#arr)"/><line x1="265" y1="170" x2="265" y2="185" stroke="#2a6cb5" stroke-width="3"/><circle cx="59" cy="190" r="3" fill="#2a6cb5"/><circle cx="265" cy="190" r="3" fill="#2a6cb5"/><text x="160" y="195" font-size="9" text-anchor="middle" fill="#666">≥75 mm Ø downpipes, ≥1 per 12 m gutter, discharge ≥600 mm from foundation</text></svg>`, caption: "Roof drainage layout." },
+        { h: "Erf-level stormwater" },
+        { list: [
+          "Driveways, paving and hardscape must be graded so runoff does not flow onto adjoining property.",
+          "Surface channels ≥ 75 mm deep; covered grates where they cross pedestrian routes.",
+          "Soakaway sized per impervious area + soil permeability (sandy: small; clay: large or piped to street).",
+          "Where the local authority operates a stormwater main, connection is mandatory."
+        ]}
+      ],
+      keyTerms: ["soakaway", "downpipe", "65 mm/hr", "Reg R", "erf grading"]
+    },
+    {
+      id: "publicsafety", icon: "🚧", title: "Public safety (Part D)",
+      summary: "Boundary walls, swimming pools, fences, falls — protecting occupants and the public.",
+      tag: "Part D",
+      sections: [
+        { h: "Scope of Part D" },
+        { p: "Part D covers anything a building owner must do to keep the public — including children — safe in and around the property: pool fences, boundary-wall safety, balcony guards, falls onto adjoining land." },
+        { svg: `<svg viewBox="0 0 320 180" width="100%" style="max-width:340px"><rect x="40" y="80" width="240" height="80" fill="#7ec8e3" stroke="#1a8a4a" stroke-width="2"/><text x="160" y="125" font-size="14" text-anchor="middle" fill="#fff" font-weight="700">POOL</text><line x1="20" y1="40" x2="20" y2="170" stroke="#0b6e3f" stroke-width="3"/><line x1="300" y1="40" x2="300" y2="170" stroke="#0b6e3f" stroke-width="3"/><line x1="20" y1="40" x2="140" y2="40" stroke="#0b6e3f" stroke-width="3"/><line x1="180" y1="40" x2="300" y2="40" stroke="#0b6e3f" stroke-width="3"/><rect x="140" y="40" width="40" height="55" fill="#fff" stroke="#0b6e3f" stroke-width="2"/><circle cx="172" cy="60" r="3" fill="#f5b800"/><text x="160" y="32" font-size="9" text-anchor="middle" fill="#0b6e3f">self-closing self-latching gate</text><text x="10" y="105" font-size="8" fill="#0b6e3f">≥1.2 m</text><line x1="305" y1="40" x2="315" y2="40" stroke="#0b6e3f"/><line x1="305" y1="170" x2="315" y2="170" stroke="#0b6e3f"/></svg>`, caption: "D4 swimming-pool barrier." },
+        { h: "Swimming pools (D4)" },
+        { list: [
+          "All swimming pools must be enclosed by a wall / fence ≥ 1.2 m high.",
+          "Self-closing, self-latching gates with the latch ≥ 1.2 m above ground (out of a child's reach).",
+          "No openings in the barrier > 100 mm sphere.",
+          "Pump and water-treatment installation must comply with SANS 10134."
+        ]},
+        { h: "Falls / balustrades (cross-ref Part M)" },
+        { p: "Wherever a level change > 1 m exists (balconies, mezzanines, retaining walls accessible to people), a balustrade ≥ 1.0 m high with no gap > 100 mm Ø is required." },
+        { h: "Excavations & site hoarding" },
+        { p: "Open excavations on or near a public road must be fenced and lit at night. Hoardings on the public side ≥ 2.0 m high." }
+      ],
+      keyTerms: ["pool fence", "self-closing gate", "fall protection", "balustrade"]
+    },
+    {
+      id: "siteops", icon: "🏗️", title: "Site operations (Part F)",
+      summary: "Site fencing, sanitary, builder's sheds, waste, dust, public protection during construction.",
+      tag: "Part F",
+      sections: [
+        { h: "Builder's site requirements (F1–F11)" },
+        { list: [
+          "F4 — Site fencing / hoarding adequate to protect the public.",
+          "F8 — Waste material on site to be controlled and removed.",
+          "F9 — Cleaning of site at completion.",
+          "F10 — Builder's sheds: location, durability, sanitation provisions.",
+          "F11 — Sanitary facilities for builders on site (1 WC per 30 workers as a guide)."
+        ]},
+        { h: "Geotechnical investigation (F3)" },
+        { p: "Where required by the local authority (e.g. dolomite, problem soils), an investigation must be done and certified by a competent person — typically a Pr.Sci.Nat (SACNASP)." },
+        { h: "Site protection of adjoining property" },
+        { p: "F2 — owner is responsible for ensuring construction operations do not endanger or damage adjoining property or services." }
+      ],
+      keyTerms: ["hoarding", "site fencing", "site sanitary", "geotech", "dolomite"]
+    },
+    {
+      id: "floors", icon: "📐", title: "Floors (Part J)",
+      summary: "Floor strength, surface finish, mezzanines and suspended slabs.",
+      tag: "Part J",
+      sections: [
+        { h: "Floor strength (J1)" },
+        { p: "Every floor must safely support the loads imposed by the occupancy, plus all dead, live and imposed (action) loads per SANS 10160. Domestic floors ≈ 1.5 kPa imposed; storage / industrial much higher." },
+        { svg: `<svg viewBox="0 0 320 200" width="100%" style="max-width:360px"><rect x="20" y="120" width="280" height="40" fill="#9aa6a0"/><text x="160" y="146" font-size="10" text-anchor="middle" fill="#fff">Compacted subgrade</text><rect x="20" y="100" width="280" height="20" fill="#c8c0a0"/><text x="160" y="114" font-size="9" text-anchor="middle" fill="#5a4a17">Hardcore + blinding</text><line x1="20" y1="100" x2="300" y2="100" stroke="#2a6cb5" stroke-width="2" stroke-dasharray="3 2"/><text x="306" y="103" font-size="8" fill="#2a6cb5">DPM</text><rect x="20" y="70" width="280" height="30" fill="#cfd8d4" stroke="#666"/><text x="160" y="88" font-size="10" text-anchor="middle" fill="#222">Concrete slab ≥100 mm + Ref 193 mesh</text><line x1="20" y1="50" x2="300" y2="50" stroke="#0b6e3f" stroke-width="2"/><text x="160" y="46" font-size="9" text-anchor="middle" fill="#0b6e3f">Finished Floor Level (FFL) ≥150 mm above outside ground</text><line x1="305" y1="50" x2="315" y2="50" stroke="#0b6e3f"/><line x1="305" y1="170" x2="315" y2="170" stroke="#0b6e3f"/></svg>`, caption: "Domestic ground-bearing slab (typical)." },
+        { h: "Ground-bearing concrete slab (typical detail)" },
+        { list: [
+          "≥ 100 mm slab on a compacted, blinded, DPM-protected hardcore bed.",
+          "Reinforcing mesh Ref 193 typical for domestic.",
+          "Movement / control joints at ≈ 6 m and at re-entrant corners.",
+          "No fall greater than is needed for drainage; finished floor level ≥ 150 mm above outside ground."
+        ]},
+        { h: "Suspended floors and mezzanines (J2-J4)" },
+        { p: "Suspended slabs and mezzanines must have a rational structural design — no empirical option in Part H/J. Surface finish must suit the use (slip-resistance in wet areas, hard-wearing in service rooms)." }
+      ],
+      keyTerms: ["Ref 193 mesh", "DPM", "movement joint", "FFL"]
+    },
+    {
+      id: "glazing", icon: "🪟", title: "Glazing (Part N)",
+      summary: "Where safety glass is required, sizing rules, low-level glazing risks.",
+      tag: "Part N",
+      sections: [
+        { svg: `<svg viewBox="0 0 320 200" width="100%" style="max-width:360px"><rect x="40" y="20" width="240" height="160" fill="#cfd8d4" stroke="#666" stroke-width="1"/><line x1="40" y1="100" x2="280" y2="100" stroke="#c8513e" stroke-width="2" stroke-dasharray="4 3"/><rect x="40" y="100" width="240" height="80" fill="rgba(200,81,62,.12)"/><text x="295" y="103" font-size="9" fill="#c8513e">800 mm</text><text x="160" y="142" font-size="11" text-anchor="middle" fill="#c8513e" font-weight="700">SAFETY GLASS REQUIRED</text><text x="160" y="158" font-size="9" text-anchor="middle" fill="#c8513e">(toughened or laminated)</text><line x1="40" y1="180" x2="40" y2="195" stroke="#0b6e3f"/><line x1="280" y1="180" x2="280" y2="195" stroke="#0b6e3f"/><line x1="40" y1="188" x2="280" y2="188" stroke="#0b6e3f"/><text x="160" y="180" font-size="9" text-anchor="middle" fill="#0b6e3f">Floor</text></svg>`, caption: "Within 800 mm of FFL — safety glass mandatory." },
+        { h: "When safety glass is required (Part N + SANS 10400-N / SANS 10137)" },
+        { list: [
+          "All glazing within 800 mm of finished floor level (full-height windows, sidelights).",
+          "All glazing in / next to doors (within 500 mm of the door edge, up to 1.5 m high).",
+          "Wet-area glazing — bath / shower screens.",
+          "Bathroom mirrors over hand-basins.",
+          "Any pane > 1 m² in human-impact zones."
+        ]},
+        { h: "Types of safety glass" },
+        { p: "Toughened (heat-strengthened, breaks into small dice) or laminated (PVB interlayer holds shards) — both acceptable for human-impact safety glazing." },
+        { h: "Wind-load sizing" },
+        { p: "Glass thickness selected per SANS 10137 wind-load tables — depends on pane size, shape, support condition, and the wind zone (1-4)." }
+      ],
+      keyTerms: ["safety glass", "toughened", "laminated", "SANS 10137"]
+    },
+    {
+      id: "nonwater", icon: "🚽", title: "Non-water-borne sanitary (Part Q)",
+      summary: "Pit latrines, ventilated improved pits (VIPs), dry sanitation systems where waterborne is impractical.",
+      tag: "Part Q",
+      sections: [
+        { h: "When Part Q applies" },
+        { p: "Where a waterborne sewer system is unavailable or impractical (rural / informal settlements), the building may use a non-water-borne sanitary system that meets Part Q." },
+        { h: "Acceptable systems" },
+        { list: [
+          "Ventilated Improved Pit latrine (VIP) — vent pipe fitted with a fly-screen, ≥ 50 mm Ø.",
+          "Pour-flush + on-site digester (e.g. septic + soakaway) per SANS 10252.",
+          "Composting / urine-diverting dry toilet, where permitted by the local authority."
+        ]},
+        { h: "Siting & separation" },
+        { p: "Pit / digester at least 30 m from any borehole or water source; downhill of any habitable structure; vent rises 500 mm above the highest point of the surrounding roof." },
+        { h: "Owner duty" },
+        { p: "Q1 — owner must maintain the system in a sanitary, hygienic condition. Local authority can require a connection to waterborne sewer once it becomes available." }
+      ],
+      keyTerms: ["VIP", "septic", "soakaway", "SANS 10252"]
+    },
+    {
+      id: "disabled", icon: "♿", title: "Facilities for disabled persons (Part S)",
+      summary: "Accessibility — ramps, doors, sanitary facilities, signage. Designs to SANS 10400-S.",
+      tag: "Part S",
+      sections: [
+        { svg: `<svg viewBox="0 0 320 160" width="100%" style="max-width:340px"><rect x="20" y="120" width="280" height="14" fill="#7c4f00"/><polygon points="60,120 220,30 280,30 280,120" fill="#cfd8d4" stroke="#0b6e3f" stroke-width="2"/><line x1="60" y1="120" x2="220" y2="30" stroke="#c8513e" stroke-width="2"/><text x="135" y="80" font-size="11" fill="#c8513e" font-weight="700">1 : 12 max</text><line x1="60" y1="140" x2="220" y2="140" stroke="#0b6e3f"/><line x1="60" y1="138" x2="60" y2="142"/><line x1="220" y1="138" x2="220" y2="142"/><text x="140" y="155" font-size="10" text-anchor="middle" fill="#0b6e3f">Run (max 9 m before landing)</text><line x1="232" y1="40" x2="270" y2="40" stroke="#0b6e3f" stroke-width="2"/><text x="251" y="53" font-size="9" text-anchor="middle" fill="#0b6e3f">Landing 1.2 m</text><line x1="225" y1="20" x2="225" y2="70" stroke="#888"/><circle cx="225" cy="20" r="4" fill="#222"/><text x="225" y="14" font-size="8" text-anchor="middle" fill="#222">handrail 900</text></svg>`, caption: "Accessibility ramp 1:12 max + intermediate landing." },
+        { h: "When Part S applies" },
+        { p: "Public buildings (A1–A5, B, C, D, E, F, G occupancies) and any building open to the public must comply. Single dwellings (H4) are exempt unless the local authority specifies." },
+        { h: "Ramps & approaches" },
+        { list: [
+          "Max gradient 1:12 for ramps, with intermediate landings every 9 m.",
+          "Min ramp width 1.1 m (1.5 m where two wheelchairs may pass).",
+          "Slip-resistant surface, raised edges or kerbs ≥ 75 mm.",
+          "Handrail at 900 mm both sides; intermediate rail at 700 mm."
+        ]},
+        { h: "Doors and circulation" },
+        { p: "Min door clear opening 800 mm; lever handles 800-1100 mm above floor; threshold ≤ 12 mm; turning circle 1.5 m at key decision points." },
+        { h: "Sanitary facilities" },
+        { list: [
+          "≥ 1 accessible WC per public sanitary suite (1.5 × 2.2 m clear).",
+          "WC pan rim 480 mm AFFL, grab rails 800 mm AFFL.",
+          "Wash basin reachable from seated position; mirror low-mounted."
+        ]},
+        { h: "Signage & wayfinding" },
+        { p: "International accessibility symbol; tactile signage at lift call buttons; visual + audible fire warning systems." }
+      ],
+      keyTerms: ["1:12 ramp", "800 mm door", "accessible WC", "SANS 10400-S"]
+    },
+    {
+      id: "refuse", icon: "🗑️", title: "Refuse disposal (Part U)",
+      summary: "Refuse rooms, chutes, on-site storage, separation from food / habitable areas.",
+      tag: "Part U",
+      sections: [
+        { h: "Refuse storage rooms (U1)" },
+        { list: [
+          "Refuse storage room must be separately ventilated, with a wash-down water point and floor drain.",
+          "Walls and floor finished in impervious, washable material (typically face-tiled or epoxy painted).",
+          "Located so refuse can be removed without crossing kitchen or food-prep areas.",
+          "Sized for the building's expected daily generation × collection interval."
+        ]},
+        { h: "Multi-storey refuse chutes" },
+        { p: "Min Ø 450 mm (commonly 600 mm), smoke-tight inspection / charging hoppers per floor, terminating in a refuse room with a 60-min FR door (cross-ref Part T)." },
+        { h: "Single dwellings" },
+        { p: "Single houses: no formal refuse room — but a designated, screened bin storage location away from the front entry and at least 1 m from any window opening." }
+      ],
+      keyTerms: ["refuse chute", "FR door", "wash-down"]
+    },
+    {
+      id: "spaceheat", icon: "🔥", title: "Space heating (Part V)",
+      summary: "Fireplaces, chimneys, flues, hearths — combustion appliance safety.",
+      tag: "Part V",
+      sections: [
+        { svg: `<svg viewBox="0 0 320 220" width="100%" style="max-width:340px"><polygon points="80,170 240,170 220,90 100,90" fill="#7c4f00" stroke="#5a3a17"/><rect x="130" y="130" width="60" height="40" fill="#222"/><polygon points="135,130 145,110 175,110 185,130" fill="#f5b800"/><rect x="60" y="170" width="200" height="14" fill="#cfd8d4" stroke="#666"/><text x="160" y="194" font-size="9" text-anchor="middle" fill="#0b6e3f">Hearth ≥300 mm in front, ≥150 mm each side, ≥125 mm thick</text><rect x="155" y="20" width="30" height="70" fill="#888" stroke="#444"/><text x="195" y="40" font-size="9" fill="#0b6e3f">Flue Ø ≥200 mm</text><text x="195" y="55" font-size="9" fill="#0b6e3f">+1 m above any roof</text><text x="195" y="70" font-size="9" fill="#0b6e3f">within 3 m</text><line x1="0" y1="85" x2="320" y2="85" stroke="#0b6e3f" stroke-dasharray="3 3"/><text x="10" y="80" font-size="8" fill="#0b6e3f">roof</text></svg>`, caption: "Hearth + flue clearance (Part V)." },
+        { h: "Hearth (V1)" },
+        { list: [
+          "Non-combustible hearth ≥ 300 mm in front of the fireplace opening and ≥ 150 mm each side.",
+          "Hearth thickness ≥ 125 mm for solid-fuel; can be reduced to 50 mm for closed gas appliance hearths.",
+          "Hearth supported on non-combustible material — concrete or brick."
+        ]},
+        { h: "Chimney / flue" },
+        { list: [
+          "Min 200 mm flue Ø for solid fuel; manufacturer's spec for closed appliances.",
+          "Chimney extends ≥ 1 m above the highest point of any roof within 3 m horizontally — and ≥ 600 mm above the ridge.",
+          "Single-skin metal flue requires ≥ 50 mm clearance to combustible materials; double-skin reduces this to 25 mm."
+        ]},
+        { h: "Combustible separation" },
+        { p: "Mantle / surround / framing must be at least 150 mm clear of the firebox opening; floor joists must not enter the chimney breast." }
+      ],
+      keyTerms: ["hearth", "flue", "chimney", "double-skin"]
+    },
+    {
+      id: "fireinst", icon: "🚒", title: "Fire installations (Part W)",
+      summary: "Water mains, hydrants, hose reels, sprinkler systems, fire pumps for buildings.",
+      tag: "Part W",
+      sections: [
+        { h: "When Part W applies" },
+        { p: "Buildings exceeding scale thresholds in Part T (most occupancies > 250 m² floor area, all multi-storey, public assembly) must have a Part-W fire installation." },
+        { h: "Hose reels (W3)" },
+        { list: [
+          "Reach: every point on each storey within 30 m of a hose reel nozzle.",
+          "Hose ≥ 30 m × 19 mm Ø with a control nozzle.",
+          "Pressure ≥ 300 kPa at nozzle, flow ≥ 0.5 L/s."
+        ]},
+        { h: "Fire hydrants" },
+        { p: "Fed off the same wet riser; spaced so any fire-resisting compartment is reachable within 30 m of a hydrant; flow rate ≥ 25 L/s at 300 kPa pressure." },
+        { h: "Sprinklers (W6, where required)" },
+        { p: "Designed to SANS 10287 / SANS 10400-W — coverage based on hazard class (light, ordinary, high). Wet pipe most common; dry pipe for unheated spaces." }
+      ],
+      keyTerms: ["hose reel", "hydrant", "wet riser", "SANS 10287", "sprinkler"]
     }
   ],
 
