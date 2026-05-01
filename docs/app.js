@@ -882,59 +882,26 @@
   function viewLanding() {
     titleEl.textContent = 'NHBRC Trainer';
     backBtn.classList.add('hidden');
-    // Hide tabbar on the unauthenticated landing
     document.body.classList.add('no-tabs');
-    const u = A && A.currentUser();
     view.innerHTML = `
-      <section class="landing">
-        <div class="landing-hero">
-          <div class="landing-flag">
-            <svg viewBox="0 0 64 64" width="72" height="72" aria-hidden="true">
-              <polygon points="32,4 60,28 60,60 4,60 4,28" fill="#fff"/>
-              <polygon points="32,12 50,28 50,52 14,52 14,28" fill="#0b6e3f"/>
-              <rect x="26" y="38" width="12" height="14" fill="#fff"/>
-            </svg>
-          </div>
-          <h1>NHBRC Trainer</h1>
-          <p class="landing-tag">South African Building Regulations & NHBRC — a study app you can use offline, on your phone.</p>
+      <section class="gate">
+        <div class="gate-flag" aria-hidden="true">
+          <svg viewBox="0 0 64 64" width="80" height="80">
+            <polygon points="32,4 60,28 60,60 4,60 4,28" fill="#fff"/>
+            <polygon points="32,12 50,28 50,52 14,52 14,28" fill="#0b6e3f"/>
+            <rect x="26" y="38" width="12" height="14" fill="#fff"/>
+          </svg>
         </div>
-
-        <div class="landing-cta">
-          ${u ? `<button class="btn primary big" data-action="enter">Continue as ${escapeHtml(u.username || u.email)}</button>` : ''}
-          <button class="btn primary big" data-action="signup">Create free account</button>
-          <button class="btn secondary big" data-action="login">Log in</button>
+        <h1 class="gate-title">NHBRC Trainer</h1>
+        <p class="gate-sub">Sign in or create an account to continue.</p>
+        <div class="gate-cta">
+          <button class="btn primary big" data-action="login">Log in</button>
+          <button class="btn secondary big" data-action="signup">Create account</button>
         </div>
-
-        <div class="landing-features">
-          <div class="lf-card"><div class="lf-emoji">📚</div><h3>17 study modules</h3><p>Every Part of SANS 10400 distilled — Foundations, Walls, Roofs, Drainage, Fire, Energy.</p></div>
-          <div class="lf-card"><div class="lf-emoji">🏆</div><h3>Master Quiz</h3><p>25 random questions per attempt. Smart coverage — every module gets tested before any repeat.</p></div>
-          <div class="lf-card"><div class="lf-emoji">📑</div><h3>Bundled legislation</h3><p>NBR 2008 + Act 103 of 1977 + amendments — public-domain SA legislation, offline.</p></div>
-          <div class="lf-card"><div class="lf-emoji">🔗</div><h3>Source-linked</h3><p>Curated index of articles and the official SABS / NHBRC purchase pages — one tap to the source.</p></div>
-          <div class="lf-card"><div class="lf-emoji">📱</div><h3>Installable PWA</h3><p>Add to home screen on iPhone or Android — works fully offline once installed.</p></div>
-          <div class="lf-card"><div class="lf-emoji">🔒</div><h3>Privacy-first</h3><p>Account + progress saved on your device. No analytics, no tracking, no third-party cookies.</p></div>
-        </div>
-
-        <div class="landing-pricing">
-          <h2>Pricing</h2>
-          <div class="price-row" style="justify-content:space-between">
-            <div>
-              <div class="price-amount">R 399</div>
-              <div class="price-meta">Lifetime · once · all features</div>
-            </div>
-            <button class="btn primary" data-action="signup">Get started</button>
-          </div>
-          <p class="meta">Free account gives you the modules, glossary and per-module quizzes. Master Quiz + future updates require lifetime access.</p>
-        </div>
-
-        <p class="meta landing-foot">
-          <a data-action="legal">Terms, privacy & sources →</a>
-          ·
-          ${A ? `${A.userCount()} accounts on this device` : ''}
-        </p>
+        <p class="meta gate-foot"><a data-action="legal">Terms, Privacy & Sources →</a></p>
       </section>`;
     view.querySelectorAll('[data-action="signup"]').forEach(el => el.addEventListener('click', () => route.go('signup')));
     view.querySelectorAll('[data-action="login"]').forEach(el => el.addEventListener('click', () => route.go('login')));
-    view.querySelectorAll('[data-action="enter"]').forEach(el => el.addEventListener('click', () => { route.history = []; route.go('home'); }));
     view.querySelectorAll('[data-action="legal"]').forEach(el => el.addEventListener('click', () => route.go('legal')));
   }
 

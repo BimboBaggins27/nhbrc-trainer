@@ -739,7 +739,32 @@ figcaption {
 body.no-tabs .tabbar { display: none; }
 body.no-tabs main { padding-bottom: 24px; }
 
-/* Landing page */
+/* Locked gate — pre-auth */
+.gate {
+  min-height: calc(100vh - 60px);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+  padding: 24px 18px 32px;
+  max-width: 420px; margin: 0 auto;
+}
+.gate-flag {
+  background: linear-gradient(135deg, #0b6e3f, #0e8a4f);
+  padding: 12px;
+  border-radius: 20px;
+  margin-bottom: 18px;
+}
+.gate-title { font-size: 28px; margin: 0 0 6px; }
+.gate-sub { color: var(--muted); margin: 0 0 22px; font-size: 14px; }
+.gate-cta {
+  display: grid; gap: 10px;
+  width: 100%;
+  max-width: 320px;
+}
+.gate-foot { margin-top: 22px; opacity: .6; }
+.gate-foot a { cursor: pointer; }
+
+/* Landing page (kept for legacy / progressive disclosure) */
 .landing { padding: 4px 4px 24px; max-width: 720px; margin: 0 auto; }
 .landing-hero { text-align: center; padding: 18px 8px 8px; }
 .landing-flag { display: inline-block; padding: 8px; border-radius: 16px;
