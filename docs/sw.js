@@ -1,5 +1,5 @@
 // NHBRC Trainer service worker — offline-first cache.
-const VERSION = 'nhbrc-v1.5.0';
+const VERSION = 'nhbrc-v2.0.0';
 const CORE_ASSETS = [
   './',
   './index.html',

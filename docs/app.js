@@ -78,9 +78,10 @@
       <a class="card warn-banner" data-action="about">
         <div class="warn-icon">⚠️</div>
         <div class="warn-text">
-          <strong>Study material only — not a legal substitute.</strong>
-          Cross-check every clause against the latest published SANS 10400 part and the
-          current NHBRC Home Building Manual before any plan submission. Tap for sources →
+          <strong>Independent study aid — not affiliated with NHBRC or SABS.</strong>
+          This trainer is a learning service. The official SANS 10400 standards (SABS, paid)
+          and NHBRC Home Building Manual must be obtained from their publishers and consulted
+          before any plan submission. Tap for sources & licensing →
         </div>
       </a>
       <a class="card source-card" data-action="about">
@@ -239,19 +240,19 @@
         '</div>';
     }
 
-    // Cited sources (auto-tagged from scraped corpus)
+    // Cited sources — link out to the original posts (no bundled body, no infringement)
     const citedIds = (L.byModule && L.byModule[m.id]) || [];
     if (citedIds.length) {
       const cited = citedIds.map(id => articleById[id]).filter(Boolean).slice(0, 8);
       if (cited.length) {
-        html += '<div class="section-title">Cited sources</div>';
+        html += '<div class="section-title">Further reading <span class="meta-inline">(opens external sources)</span></div>';
         html += '<div class="cite-list">' + cited.map(a => `
-          <a class="cite-card" data-action="open-article" data-id="${escapeHtml(a.id)}">
-            <div class="cite-title">${escapeHtml(a.title)}</div>
-            <div class="cite-meta">${escapeHtml((a.categories || []).slice(0,2).join(' · '))}</div>
+          <a class="cite-card" href="${escapeHtml(a.url)}" target="_blank" rel="noopener">
+            <div class="cite-title">${escapeHtml(a.title)} <span class="ext-arrow">↗</span></div>
+            <div class="cite-meta">${escapeHtml((a.categories || []).slice(0,2).join(' · '))} · sans10400.co.za</div>
           </a>`).join('') + '</div>';
         if (citedIds.length > cited.length) {
-          html += `<div class="meta">+ ${citedIds.length - cited.length} more in the Library</div>`;
+          html += `<div class="meta">+ ${citedIds.length - cited.length} more on the Library tab</div>`;
         }
       }
     }
@@ -286,27 +287,40 @@
 
     let html = `<div class="hero" style="background:linear-gradient(135deg,#1a8a4a,#0b6e3f)">
       <h2>📚 Library</h2>
-      <p>${L.articleCount} articles &amp; ${L.pdfCount} source PDFs — searchable, offline.</p>
-    </div>
-    <input type="search" class="search" id="libsearch" placeholder="Search ${L.articleCount} articles…" />
-    <div class="filter-row" id="libfilters">
-      <button class="chip-btn active" data-cat="">All</button>
-      ${topCats.map(([c,n]) => `<button class="chip-btn" data-cat="${escapeHtml(c)}">${escapeHtml(c)} <span class="chip-num">${n}</span></button>`).join('')}
+      <p>Curated index — bundled public-domain legislation + links out to authoritative sources.</p>
     </div>
 
-    <div class="section-title">Source documents (PDF)</div>
+    <div class="section-title">📕 Bundled (public-domain legislation)</div>
     <div class="pdf-list">
       ${L.pdfs.map(p => `<a class="card pdf-card" href="${escapeHtml(p.file)}" target="_blank" rel="noopener">
         <div class="pdf-icon">📕</div>
         <div class="pdf-body">
           <div class="pdf-title">${escapeHtml(p.title)}</div>
           <div class="meta">${escapeHtml(p.description)}</div>
-          <div class="meta">${p.sizeMb} MB · ${escapeHtml(p.source)}</div>
+          <div class="meta">${p.sizeMb} MB · ${escapeHtml(p.source)} · public domain</div>
         </div>
       </a>`).join('')}
     </div>
 
-    <div class="section-title">Articles</div>
+    <div class="section-title">🔗 Buy / get from official source</div>
+    <div class="pdf-list">
+      ${(L.externalDocs || []).map(d => `<a class="card pdf-card ext-card" href="${escapeHtml(d.url)}" target="_blank" rel="noopener">
+        <div class="pdf-icon">↗</div>
+        <div class="pdf-body">
+          <div class="pdf-title">${escapeHtml(d.title)}</div>
+          <div class="meta">${escapeHtml(d.note)}</div>
+          <div class="meta">Publisher: ${escapeHtml(d.publisher)}</div>
+        </div>
+      </a>`).join('')}
+    </div>
+
+    <div class="section-title">🗞️ Curated articles <span class="meta-inline">(${L.articleCount} — open on sans10400.co.za)</span></div>
+    <input type="search" class="search" id="libsearch" placeholder="Search by title or category…" />
+    <div class="filter-row" id="libfilters">
+      <button class="chip-btn active" data-cat="">All</button>
+      ${topCats.map(([c,n]) => `<button class="chip-btn" data-cat="${escapeHtml(c)}">${escapeHtml(c)} <span class="chip-num">${n}</span></button>`).join('')}
+    </div>
+    <div class="meta" style="margin:6px 0 4px">${escapeHtml(L.articlesNote || '')}</div>
     <div id="liblist"></div>`;
     view.innerHTML = html;
 
@@ -321,8 +335,7 @@
         const qq = q.toLowerCase();
         arts = arts.filter(a =>
           a.title.toLowerCase().includes(qq) ||
-          (a.summary || '').toLowerCase().includes(qq) ||
-          (a.body || '').toLowerCase().includes(qq)
+          (a.categories || []).some(c => c.toLowerCase().includes(qq))
         );
       }
       if (!arts.length) {
@@ -330,14 +343,11 @@
         return;
       }
       listEl.innerHTML = arts.slice(0, 200).map(a => `
-        <a class="card lib-card" data-action="open-article" data-id="${escapeHtml(a.id)}">
-          <div class="lib-title">${escapeHtml(a.title)}</div>
-          <div class="meta">${escapeHtml(a.summary || '')}</div>
+        <a class="card lib-card" href="${escapeHtml(a.url)}" target="_blank" rel="noopener">
+          <div class="lib-title">${escapeHtml(a.title)} <span class="ext-arrow">↗</span></div>
           <div class="tag-row">${(a.categories||[]).slice(0,3).map(c=>`<span class="tag">${escapeHtml(c)}</span>`).join('')}</div>
         </a>`).join('') +
         (arts.length > 200 ? `<div class="meta" style="text-align:center;margin:10px">Showing first 200 of ${arts.length} — narrow your search.</div>` : '');
-      listEl.querySelectorAll('[data-action="open-article"]').forEach(el =>
-        el.addEventListener('click', () => route.go('article', el.dataset.id)));
     }
 
     document.getElementById('libsearch').addEventListener('input', (e) => {
@@ -356,26 +366,10 @@
   }
 
   function viewArticle(id) {
+    // Articles are no longer rendered in-app — they're hosted on the original site.
     const a = articleById[id];
-    if (!a) return route.go('library');
-    titleEl.textContent = a.title;
-    backBtn.classList.remove('hidden');
-    setActiveTab('library');
-
-    let html = `<article class="lesson lib-article">
-      <h2>${escapeHtml(a.title)}</h2>
-      <div class="meta">
-        ${(a.categories||[]).map(c => `<span class="tag">${escapeHtml(c)}</span>`).join(' ')}
-      </div>
-      <div class="meta" style="margin-top:6px">
-        <a href="${escapeHtml(a.url)}" target="_blank" rel="noopener" class="btn-link">↗ Original on sans10400.co.za</a>
-      </div>
-      <div class="md-body">${renderMarkdown(a.body || '')}</div>
-      <div class="actions"><button class="btn secondary" data-action="back">Back</button></div>
-    </article>`;
-    view.innerHTML = html;
-    view.querySelectorAll('[data-action="back"]').forEach(el =>
-      el.addEventListener('click', () => route.back()));
+    if (a && a.url) { window.open(a.url, '_blank', 'noopener'); }
+    route.go('library');
   }
 
   // Tiny safe markdown renderer — handles headings, paragraphs, lists, tables, blockquote.
@@ -813,7 +807,6 @@
     if (name === 'module') return 'home';
     if (name === 'quizlist') return 'quiz';
     if (name === 'article') return 'library';
-    if (name === 'diagrams') return 'diagrams';
     if (name === 'master') return 'quiz';
     return name;
   }
@@ -829,7 +822,6 @@
     if (name === 'progress') return viewProgress();
     if (name === 'library') return viewLibrary();
     if (name === 'article') return viewArticle(payload);
-    if (name === 'diagrams') return viewDiagrams();
     if (name === 'master') return viewMasterQuiz();
     return viewHome();
   }
@@ -840,7 +832,6 @@
     route.history = [];
     if (r === 'quiz') route.current = { name: 'quizlist', payload: null };
     else if (r === 'library') route.current = { name: 'library', payload: null };
-    else if (r === 'diagrams') route.current = { name: 'diagrams', payload: null };
     else route.current = { name: r, payload: null };
     render();
   }));
@@ -870,7 +861,6 @@
     else if (h === 'glossary') { route.current = { name: 'glossary', payload: null }; }
     else if (h === 'progress') { route.current = { name: 'progress', payload: null }; }
     else if (h === 'library') { route.current = { name: 'library', payload: null }; }
-    else if (h === 'diagrams') { route.current = { name: 'diagrams', payload: null }; }
     else if (h === 'master') { route.current = { name: 'master', payload: null }; }
     else if (h.startsWith('m=')) { route.current = { name: 'module', payload: h.slice(2) }; }
     else if (h.startsWith('q=')) { route.current = { name: 'quiz', payload: h.slice(2) }; }

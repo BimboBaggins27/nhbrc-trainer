@@ -72,7 +72,7 @@ main {
 
 .tabbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
-  display: grid; grid-template-columns: repeat(6, 1fr);
+  display: grid; grid-template-columns: repeat(5, 1fr);
   background: var(--surface);
   border-top: 1px solid var(--border);
   padding-bottom: env(safe-area-inset-bottom);
@@ -703,3 +703,8 @@ figcaption {
 .warn-icon { font-size: 22px; line-height: 1.1; flex: 0 0 26px; }
 .warn-text { font-size: 13px; line-height: 1.4; }
 .warn-text strong { color: #f5d56a; display: block; margin-bottom: 4px; }
+
+.ext-card { border-color: rgba(245,184,0,.35); }
+.ext-card .pdf-icon { color: #f5b800; }
+.ext-arrow { font-size: 11px; opacity: .7; margin-left: 4px; }
+.meta-inline { font-size: 12px; font-weight: 400; opacity: .7; text-transform: none; letter-spacing: 0; }
