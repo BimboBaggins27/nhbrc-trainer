@@ -721,6 +721,29 @@ figcaption {
 .hist-pct.bad  { background: rgba(200,81,62,.18); color: #ff9b87; }
 .hist-score { font-variant-numeric: tabular-nums; opacity: .85; }
 .hist-date { opacity: .7; font-size: 12px; }
+/* Mock test */
+.mock-card {
+  background: linear-gradient(135deg, #002b00, #0b6e3f);
+  border: 1px solid #6fdc9a;
+}
+.mock-card h3 { color: #c8f5d8; }
+.mock-meta {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  font-size: 13px;
+  background: rgba(255,255,255,.06);
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.mock-q .quiz-opt.selected {
+  background: rgba(11,110,63,.4);
+  border-color: #6fdc9a;
+  color: #fff;
+}
+.quiz-score.pass { background: linear-gradient(135deg, rgba(26,138,74,.18), rgba(11,110,63,.12)); border-color: #6fdc9a; }
+.quiz-score.fail { background: linear-gradient(135deg, rgba(200,81,62,.18), rgba(120,30,20,.10)); border-color: #ff9b87; }
+
 .q-mod {
   display: inline-block;
   font-size: 11px;

@@ -671,6 +671,12 @@
     let html = `<div class="hero" style="background:linear-gradient(135deg,#7c4f00,#f5b800)">
       <h2>Test yourself</h2><p>Pick any topic — or take the Master Quiz for a randomised mix.</p></div>
 
+      <a class="card mock-card" data-action="mock">
+        <h3>🎓 Mock NHBRC Test <span class="badge gold">50 q · 60 min</span></h3>
+        <div class="meta">Exam-style: 50 random questions across every module, no answer feedback until the end, soft 60-minute timer. Pass mark 70%.</div>
+        <div class="meta master-stats">${(loadMockHistory() || []).length ? `Attempts: <strong>${loadMockHistory().length}</strong> · Best: <strong>${Math.max(...loadMockHistory().map(h=>h.correct))}/50</strong>` : 'No attempts yet'}</div>
+      </a>
+
       <a class="card master-card" data-action="master">
         <h3>🏆 Master Quiz <span class="badge gold">${MASTER_SIZE} random</span></h3>
         <div class="meta">${MASTER_SIZE} questions per attempt, picked to cover every module and avoid repeats until the whole pool of ${pool.length} is exhausted.</div>
@@ -708,10 +714,11 @@
       el.addEventListener('click', () => route.go('quiz', el.dataset.id)));
     view.querySelectorAll('[data-action="master"]').forEach(el =>
       el.addEventListener('click', (e) => {
-        // ignore clicks that bubble up from the inner reset link
         if (e.target.closest('[data-action="reset-cycle"]')) return;
         route.go('master', null);
       }));
+    view.querySelectorAll('[data-action="mock"]').forEach(el =>
+      el.addEventListener('click', () => route.go('mock', null)));
     view.querySelectorAll('[data-action="reset-cycle"]').forEach(el =>
       el.addEventListener('click', (e) => {
         e.stopPropagation(); e.preventDefault();
@@ -720,6 +727,140 @@
           render();
         }
       }));
+  }
+
+  // ---------- Mock NHBRC test (exam simulation) ----------
+  const MOCK_KEY = 'nhbrc.mock.v1';
+  const MOCK_SIZE = 50;
+  const MOCK_DURATION_S = 60 * 60; // 60 min soft timer
+  const MOCK_PASS = 0.70;
+  function loadMockHistory() {
+    try { return JSON.parse(localStorage.getItem(MOCK_KEY) || '[]'); }
+    catch { return []; }
+  }
+  function saveMockHistory(entry) {
+    const h = loadMockHistory();
+    h.unshift(entry);
+    localStorage.setItem(MOCK_KEY, JSON.stringify(h.slice(0, 50)));
+  }
+
+  function viewMockTest() {
+    const pool = masterPool();
+    const n = Math.min(MOCK_SIZE, pool.length);
+    // Spread across modules: at least 1 from each module that has questions, then fill randomly.
+    const byMod = {};
+    for (const q of pool) (byMod[q.moduleId] = byMod[q.moduleId] || []).push(q);
+    const mods = shuffle(Object.keys(byMod));
+    const picked = [];
+    const usedIds = new Set();
+    for (const mid of mods) {
+      if (picked.length >= n) break;
+      const cands = byMod[mid].filter(q => !usedIds.has(q.qid));
+      if (!cands.length) continue;
+      const q = cands[Math.floor(Math.random() * cands.length)];
+      picked.push(q); usedIds.add(q.qid);
+    }
+    const remaining = pool.filter(q => !usedIds.has(q.qid));
+    for (const q of shuffle(remaining)) {
+      if (picked.length >= n) break;
+      picked.push(q); usedIds.add(q.qid);
+    }
+    const questions = shuffle(picked).map(shuffleOpts);
+
+    titleEl.textContent = 'Mock NHBRC test';
+    backBtn.classList.remove('hidden');
+    setActiveTab('quiz');
+    const startedAt = Date.now();
+    const answers = new Array(questions.length).fill(null);
+    let submitted = false;
+
+    function buildHtml() {
+      let html = `<div class="mock-meta">
+        <span>📝 ${questions.length} questions</span>
+        <span>⏱️ <span id="mockTimer">60:00</span></span>
+        <span>🎯 Pass: ≥${Math.round(MOCK_PASS*100)}%</span>
+      </div>
+      <p class="meta">Mark each question, then tap Submit. You'll see the score and where you went wrong only at the end — that's the real exam experience.</p>`;
+      questions.forEach((qq, qi) => {
+        html += `<div class="quiz-q mock-q" data-q="${qi}">
+          <p class="qstem"><span class="q-mod">${qq.moduleIcon} ${escapeHtml(qq.moduleTitle)}</span><br>${qi + 1}. ${escapeHtml(qq.q)}</p>
+          ${qq.opts.map((opt, oi) => `<button class="quiz-opt" data-q="${qi}" data-opt="${oi}">${escapeHtml(opt)}</button>`).join('')}
+        </div>`;
+      });
+      html += `<div id="mockSubmitWrap" class="actions">
+        <button class="btn primary big" id="mockSubmit">Submit test</button>
+        <button class="btn secondary" data-action="back">Abandon</button>
+      </div>
+      <div id="mockResult"></div>`;
+      return html;
+    }
+
+    view.innerHTML = buildHtml();
+
+    // Wire selection (no feedback yet)
+    view.querySelectorAll('.mock-q .quiz-opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (submitted) return;
+        const qi = +btn.dataset.q;
+        const oi = +btn.dataset.opt;
+        answers[qi] = oi;
+        const block = view.querySelector(`.mock-q[data-q="${qi}"]`);
+        block.querySelectorAll('.quiz-opt').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+      });
+    });
+
+    // Soft timer — counts down but does not force-submit
+    const timer = document.getElementById('mockTimer');
+    const tickEnd = startedAt + MOCK_DURATION_S * 1000;
+    const ti = setInterval(() => {
+      if (submitted) { clearInterval(ti); return; }
+      const remain = Math.max(0, Math.floor((tickEnd - Date.now()) / 1000));
+      const m = String(Math.floor(remain / 60)).padStart(2, '0');
+      const s = String(remain % 60).padStart(2, '0');
+      timer.textContent = `${m}:${s}`;
+      if (remain <= 0) { timer.style.color = '#ff9b87'; }
+    }, 1000);
+
+    function finalize() {
+      submitted = true;
+      let correct = 0;
+      const wrongIds = [];
+      answers.forEach((oi, qi) => {
+        const qq = questions[qi];
+        const block = view.querySelector(`.mock-q[data-q="${qi}"]`);
+        const opts = block.querySelectorAll('.quiz-opt');
+        opts.forEach((b, i) => {
+          b.disabled = true;
+          if (i === qq.a) b.classList.add('correct');
+          if (oi === i && i !== qq.a) b.classList.add('wrong');
+        });
+        if (oi === qq.a) correct++;
+        else wrongIds.push(qi);
+        const ex = document.createElement('div');
+        ex.className = 'quiz-explain';
+        ex.textContent = (oi === qq.a ? '✔ ' : oi === null ? '— unanswered. ' : '✘ ') + qq.why;
+        block.appendChild(ex);
+      });
+      const pct = Math.round(correct / questions.length * 100);
+      const passed = pct >= Math.round(MOCK_PASS * 100);
+      saveMockHistory({ at: Date.now(), correct, total: questions.length, durationS: Math.floor((Date.now() - startedAt) / 1000) });
+      const result = document.getElementById('mockResult');
+      result.innerHTML = `<div class="quiz-score ${passed ? 'pass' : 'fail'}">
+        <p class="pct">${pct}%</p>
+        <p class="lbl">${correct} / ${questions.length} · ${passed ? '🎉 Above the 70% pass mark' : '⚠️ Below the 70% pass mark — review the misses, then retake'}</p>
+        <p class="meta">Saved to history.</p>
+      </div>`;
+      result.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    document.getElementById('mockSubmit').addEventListener('click', () => {
+      const unanswered = answers.filter(a => a === null).length;
+      if (unanswered > 0 && !confirm(`${unanswered} unanswered. Submit anyway?`)) return;
+      finalize();
+    });
+    view.querySelectorAll('[data-action="back"]').forEach(el =>
+      el.addEventListener('click', () => { if (submitted || confirm('Abandon test?')) route.back(); }));
   }
 
   function viewMasterQuiz() {
@@ -1119,6 +1260,7 @@
     if (name === 'quizlist') return 'quiz';
     if (name === 'article') return 'library';
     if (name === 'master') return 'quiz';
+    if (name === 'mock') return 'quiz';
     return name;
   }
 
@@ -1144,6 +1286,7 @@
     if (name === 'library') return viewLibrary();
     if (name === 'article') return viewArticle(payload);
     if (name === 'master') return viewMasterQuiz();
+    if (name === 'mock')   return viewMockTest();
     if (name === 'legal') return viewLegal();
     if (name === 'unlock') return viewUnlock(payload || 'general');
     return viewHome();
@@ -1225,6 +1368,25 @@
         author. The Library tab provides a curated index with outbound links; the
         article text and images are not bundled.</li>
       </ul>
+
+      <h3>What this app does NOT replace (read this)</h3>
+      <p>This trainer is an <strong>orientation and study aid</strong>. To pass the actual
+      NHBRC homebuilder competency assessment, you also need:</p>
+      <ul>
+        <li>The <strong>NHBRC Home Building Manual</strong> itself — purchased from NHBRC,
+        contains the prescriptive tables (foundation widths by site class × wall load,
+        reinforcement schedules, plumbing layouts) which are NHBRC copyright and cannot
+        legally be bundled here.</li>
+        <li>The <strong>current per-part SANS 10400 standards</strong> (A through XA) — sold
+        by SABS. The 1990 base + 2008/2011 amendments bundled here give the regulatory
+        framework, not the per-Part technical detail.</li>
+        <li><strong>Practical, supervised site experience</strong> — calculating brick and
+        mortar quantities, recognising soil classes in the field, sequencing inspections,
+        running a competent-person interface — these need real builds, not flashcards.</li>
+      </ul>
+      <p>If anyone tells you they have a "complete NHBRC Q&amp;A bank that guarantees a pass",
+      be sceptical. The actual exam content is not public. The most reliable strategy is
+      this app + the official manuals + supervised experience.</p>
 
       <h3>No legal or professional advice</h3>
       <p>The content in this app is <strong>educational only</strong>. It is not legal,
