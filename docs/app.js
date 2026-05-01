@@ -272,6 +272,19 @@
         '</div>';
     }
 
+    // Source regulation text (public-domain NBR 2008) — full clauses for this module
+    const REGS = window.NHBRC_REGS || { byModule: {} };
+    const moduleRegs = (REGS.byModule && REGS.byModule[m.id]) || [];
+    if (moduleRegs.length) {
+      html += `<div class="section-title">Source regulation text <span class="meta-inline">(${moduleRegs.length} clause${moduleRegs.length===1?'':'s'} from the NBR 2008 — public domain)</span></div>`;
+      html += '<div class="reg-list">' + moduleRegs.map(r => `
+        <details class="reg-item">
+          <summary><span class="reg-ref">${escapeHtml(r.ref)}</span> ${escapeHtml(r.title)}</summary>
+          <div class="reg-text">${escapeHtml(r.text)}</div>
+        </details>`).join('') + '</div>';
+      html += `<div class="meta">From: <em>${escapeHtml(REGS.source || '')}</em></div>`;
+    }
+
     // Cited sources — link out to the original posts (no bundled body, no infringement)
     const citedIds = (L.byModule && L.byModule[m.id]) || [];
     if (citedIds.length) {

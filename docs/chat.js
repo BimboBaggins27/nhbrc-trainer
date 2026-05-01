@@ -190,6 +190,21 @@
         });
       }
     }
+    // Public-domain NBR clauses — full text per regulation
+    const R = window.NHBRC_REGS || { byModule: {} };
+    for (const mid of Object.keys(R.byModule || {})) {
+      for (const r of R.byModule[mid]) {
+        CORPUS.push({
+          id: `reg:${r.ref}`,
+          type: 'regulation',
+          title: `${r.ref} — ${r.title}`,
+          body: r.text,
+          source: 'NBR 2008 (public domain)',
+          link: { route: 'module', payload: mid },
+        });
+      }
+    }
+
     // Library articles — title + category only (we don't bundle the body)
     const L = window.NHBRC_LIBRARY || {};
     for (const a of (L.articles || [])) {
@@ -233,7 +248,7 @@
     const titleBoost = (d, t) => (d.title.toLowerCase().includes(t) ? 4 : 0);
     const exactPhraseBoost = (d) => (d.title.toLowerCase().includes(query.toLowerCase().trim()) ? 25 :
                                       d.body.toLowerCase().includes(query.toLowerCase().trim()) ? 8 : 0);
-    const typeBoost = { module: 1.0, quiz: 0.95, glossary: 1.05, law: 0.85, article: 0.6, external: 0.5 };
+    const typeBoost = { regulation: 1.15, module: 1.0, quiz: 0.95, glossary: 1.05, law: 0.85, article: 0.6, external: 0.5 };
 
     const scored = [];
     for (const d of CORPUS) {
