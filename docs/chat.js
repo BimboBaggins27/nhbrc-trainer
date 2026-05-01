@@ -1,15 +1,14 @@
-// NHBRC Trainer — AI tutor overlay (Claude via Cloudflare Worker proxy).
+// NHBRC Trainer — local search-based AI tutor.
 //
-// The Anthropic API key NEVER touches the browser. All requests go to the
-// Worker at `${CHAT_API}/chat`, which holds the key as a secret.
-//
-// Until the Worker is deployed, this stays in demo mode and shows a clear
-// "wire up the backend" message instead of failing.
+// Zero backend, zero API cost, zero data leaving the device.
+// Builds a TF-IDF-ish index over the app's content (modules, glossary,
+// quiz explanations, library article titles) and answers user questions
+// by ranking relevant snippets and citing their source.
 
 (function () {
-  const CHAT_API = ''; // e.g. 'https://nhbrc-payments.<you>.workers.dev'
   const STORE_KEY = 'nhbrc.chat.v1';
   const MAX_TURNS = 20;
+  const STOPWORDS = new Set('a an and are as at be but by can do does for from has have how i if in is it its me my no not of on or our should so that the their there they this to was we what when where which who why will with you your'.split(' '));
 
   function load() { try { return JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); } catch { return []; } }
   function save(arr) { localStorage.setItem(STORE_KEY, JSON.stringify(arr.slice(-MAX_TURNS))); }
@@ -105,8 +104,8 @@
     const turns = load();
     if (!turns.length) {
       thread.innerHTML = `<div class="chat-empty">
-        <p>👋 Ask me anything about SANS 10400, NHBRC, building regs, plan submissions, foundations, fire, energy — pick a starter below or type your own.</p>
-        ${CHAT_API ? '' : `<p class="meta">⚠️ Demo mode — answers are stubbed because no AI backend is wired. Deploy <code>payments/worker.js</code> and set <code>CHAT_API</code> in <code>chat.js</code> to enable real Claude responses.</p>`}
+        <p>👋 Ask anything about the trainer's content — modules, glossary, quiz explanations, legal framework, library.</p>
+        <p class="meta">Local search: no API, no internet needed, nothing leaves your device. Pick a starter or type your own.</p>
       </div>`;
       return;
     }
@@ -119,6 +118,181 @@
 
   let chatBusy = false;
 
+  // ---------- Local search index ----------
+  let CORPUS = null;       // [{id, type, title, body, source, link, tokens, tf}]
+  let DF = null;           // term -> doc count
+  let TOTAL_DOCS = 0;
+
+  function tokenize(s) {
+    return String(s || '').toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .split(/\s+/)
+      .filter(t => t && t.length > 1 && !STOPWORDS.has(t));
+  }
+
+  function buildIndex() {
+    if (CORPUS) return;
+    CORPUS = [];
+
+    const D = window.NHBRC_DATA;
+    if (D) {
+      // Modules — index each section as its own doc
+      for (const m of (D.modules || [])) {
+        const title = `${m.icon || ''} ${m.title}`.trim();
+        for (const [si, s] of (m.sections || []).entries()) {
+          const parts = [s.h, s.p, (s.list || []).join('. '), s.text, s.caption].filter(Boolean);
+          const body = parts.join(' ');
+          if (!body || body.length < 20) continue;
+          CORPUS.push({
+            id: `mod:${m.id}:${si}`,
+            type: 'module',
+            title: `${title}${s.h ? ' — ' + s.h : ''}`,
+            body,
+            source: m.tag ? `Module · ${m.tag}` : 'Module',
+            link: { route: 'module', payload: m.id },
+          });
+        }
+      }
+      // Glossary
+      for (const t of (D.glossary || [])) {
+        CORPUS.push({
+          id: `gl:${t.term}`,
+          type: 'glossary',
+          title: t.term,
+          body: t.defn,
+          source: 'Glossary',
+          link: { route: 'glossary', payload: null },
+        });
+      }
+      // Quiz explanations — best source of one-line factual answers
+      for (const q of (D.quizzes || [])) {
+        const m = (D.modules || []).find(x => x.id === q.moduleId);
+        for (const [qi, qq] of q.questions.entries()) {
+          CORPUS.push({
+            id: `qz:${q.moduleId}:${qi}`,
+            type: 'quiz',
+            title: qq.q,
+            body: `${qq.q} ${qq.why} Correct answer: ${qq.opts[qq.a]}.`,
+            source: m ? `Quiz · ${m.title}` : 'Quiz',
+            link: { route: 'quiz', payload: q.moduleId },
+          });
+        }
+      }
+      // About — laws + methodology
+      for (const law of ((D.about || {}).laws || [])) {
+        CORPUS.push({
+          id: `law:${law.name}`,
+          type: 'law',
+          title: law.name,
+          body: `${law.name}. ${law.role}`,
+          source: 'Legal framework',
+          link: { route: 'about', payload: null },
+        });
+      }
+    }
+    // Library articles — title + category only (we don't bundle the body)
+    const L = window.NHBRC_LIBRARY || {};
+    for (const a of (L.articles || [])) {
+      CORPUS.push({
+        id: `art:${a.id}`,
+        type: 'article',
+        title: a.title,
+        body: `${a.title}. ${(a.categories || []).join(', ')}`,
+        source: 'sans10400.co.za',
+        link: { external: a.url },
+      });
+    }
+    // External buy/get links
+    for (const d of (L.externalDocs || [])) {
+      CORPUS.push({
+        id: `ext:${d.title}`,
+        type: 'external',
+        title: d.title,
+        body: `${d.title}. ${d.note} Publisher: ${d.publisher}.`,
+        source: d.publisher,
+        link: { external: d.url },
+      });
+    }
+
+    // Tokenise + tf
+    DF = {};
+    for (const d of CORPUS) {
+      const tokens = tokenize(d.title + ' ' + d.body);
+      const tf = {};
+      for (const t of tokens) tf[t] = (tf[t] || 0) + 1;
+      d.tokens = tokens; d.tf = tf;
+      for (const t of new Set(tokens)) DF[t] = (DF[t] || 0) + 1;
+    }
+    TOTAL_DOCS = CORPUS.length;
+  }
+
+  function search(query, k = 5) {
+    buildIndex();
+    const qts = tokenize(query);
+    if (!qts.length) return [];
+    const titleBoost = (d, t) => (d.title.toLowerCase().includes(t) ? 4 : 0);
+    const exactPhraseBoost = (d) => (d.title.toLowerCase().includes(query.toLowerCase().trim()) ? 25 :
+                                      d.body.toLowerCase().includes(query.toLowerCase().trim()) ? 8 : 0);
+    const typeBoost = { module: 1.0, quiz: 0.95, glossary: 1.05, law: 0.85, article: 0.6, external: 0.5 };
+
+    const scored = [];
+    for (const d of CORPUS) {
+      let s = 0;
+      for (const t of qts) {
+        const tf = d.tf[t] || 0;
+        if (!tf) continue;
+        const idf = Math.log((TOTAL_DOCS + 1) / ((DF[t] || 0) + 1)) + 1;
+        s += (Math.log(1 + tf) + titleBoost(d, t)) * idf;
+      }
+      s += exactPhraseBoost(d);
+      s *= (typeBoost[d.type] || 1);
+      if (s > 0) scored.push({ d, s });
+    }
+    scored.sort((a, b) => b.s - a.s);
+    return scored.slice(0, k);
+  }
+
+  function snippet(doc, query, max = 240) {
+    const body = doc.body || '';
+    const ql = query.toLowerCase();
+    let i = body.toLowerCase().indexOf(ql);
+    if (i < 0) {
+      // fall back to first matching term
+      for (const t of tokenize(query)) {
+        const j = body.toLowerCase().indexOf(t);
+        if (j >= 0) { i = j; break; }
+      }
+    }
+    if (i < 0) i = 0;
+    const start = Math.max(0, i - 60);
+    const end = Math.min(body.length, start + max);
+    let s = body.slice(start, end).trim();
+    if (start > 0) s = '… ' + s;
+    if (end < body.length) s = s + ' …';
+    return s;
+  }
+
+  function answer(query) {
+    const hits = search(query, 5);
+    if (!hits.length) {
+      return `I couldn't find anything matching **${escapeHtml(query)}** in the trainer's content.
+
+Try rephrasing — the search looks at module text, glossary, quiz explanations, the legal-framework list, and the curated article index. For anything beyond that, the official sources are linked from the **Library** tab (SABS, NHBRC, ARC).`;
+    }
+    const top = hits[0];
+    const others = hits.slice(1);
+    const intro = `**Closest match: ${escapeHtml(top.d.title)}** _(${escapeHtml(top.d.source)})_
+
+${escapeHtml(snippet(top.d, query))}`;
+    let related = '';
+    if (others.length) {
+      related = `\n\n**Other relevant content:**\n\n` +
+        others.map(h => `- **${escapeHtml(h.d.title)}** _(${escapeHtml(h.d.source)})_ — ${escapeHtml(snippet(h.d, query, 140))}`).join('\n');
+    }
+    const reminder = `\n\n_Reminder: study aid only. For real plan submissions, work to the latest published SANS 10400 part and the NHBRC Home Building Manual._`;
+    return intro + related + reminder;
+  }
+
   async function ask(question) {
     const turns = load();
     turns.push({ role: 'user', content: question });
@@ -126,43 +300,13 @@
     chatBusy = true;
     renderThread();
 
-    const userId = window.NHBRC_AUTH?.currentUser?.()?.email
-      || window.NHBRC_AUTH?.currentUser?.()?.username
-      || 'anonymous';
-
-    let assistantText = '';
-    if (!CHAT_API) {
-      // Demo / no-backend mode — explain the situation gracefully.
-      assistantText = `**Demo mode — no AI backend wired.**
-
-To enable real Claude answers:
-
-1. Deploy the Cloudflare Worker per \`payments/README.md\`.
-2. Set the \`ANTHROPIC_API_KEY\` secret with your Anthropic key.
-3. Open \`docs/chat.js\` and set \`CHAT_API\` to your Worker URL.
-
-In the meantime, the rest of the app — modules, glossary, master quiz, library — works fully offline.`;
-    } else {
-      try {
-        const r = await fetch(`${CHAT_API}/chat`, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ messages: load(), userId }),
-        });
-        const data = await r.json();
-        if (!r.ok) {
-          assistantText = `⚠️ ${data.error || 'AI error.'}${data.detail ? '\n\n' + data.detail : ''}`;
-        } else {
-          assistantText = data.message || '(no answer)';
-        }
-      } catch (e) {
-        assistantText = `⚠️ Network error reaching the AI backend.\n\n${e.message || e}`;
-      }
-    }
+    // 60ms cosmetic delay so the typing dots are visible
+    await new Promise(r => setTimeout(r, 200));
+    const text = answer(question);
 
     chatBusy = false;
     const next = load();
-    next.push({ role: 'assistant', content: assistantText });
+    next.push({ role: 'assistant', content: text });
     save(next);
     renderThread();
   }
@@ -178,7 +322,7 @@ In the meantime, the rest of the app — modules, glossary, master quiz, library
   }
 
   // Public API
-  window.NHBRC_CHAT = { open, close, clear, hasBackend: !!CHAT_API };
+  window.NHBRC_CHAT = { open, close, clear, search, answer };
 
   // Mount FAB once DOM is ready, then refresh visibility on auth changes.
   document.addEventListener('DOMContentLoaded', () => {
