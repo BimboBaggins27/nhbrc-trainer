@@ -3,6 +3,30 @@
   const L = window.NHBRC_LIBRARY || { articles: [], pdfs: [], byModule: {} };
   const A = window.NHBRC_AUTH;
   const articleById = Object.fromEntries((L.articles || []).map(a => [a.id, a]));
+
+  // Merge quiz-extra.js questions into D.quizzes once, at startup.
+  (function mergeExtras() {
+    const extra = window.NHBRC_QUIZ_EXTRA || {};
+    for (const mid of Object.keys(extra)) {
+      const q = D.quizzes.find(x => x.moduleId === mid);
+      if (q) q.questions = q.questions.concat(extra[mid]);
+    }
+  })();
+
+  // Shuffle answer options of a question while keeping `a` (correct index)
+  // pointing at the right option afterwards.
+  function shuffleOpts(qq) {
+    const order = qq.opts.map((_, i) => i);
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [order[i], order[j]] = [order[j], order[i]];
+    }
+    return {
+      ...qq,
+      opts: order.map(i => qq.opts[i]),
+      a: order.indexOf(qq.a),
+    };
+  }
   const view = document.getElementById('view');
   const titleEl = document.getElementById('title');
   const backBtn = document.getElementById('backBtn');
@@ -662,7 +686,7 @@
     const pool = masterPool();
     const n = Math.min(MASTER_SIZE, pool.length);
     const seenBefore = loadSeen().size;
-    const questions = pickMasterQuestions(pool, n);
+    const questions = pickMasterQuestions(pool, n).map(shuffleOpts);
     const seenAfter = loadSeen().size;
     const cycleNote = seenAfter <= n
       ? 'Fresh cycle — every question is new.'
@@ -738,8 +762,22 @@
     backBtn.classList.remove('hidden');
     setActiveTab('quiz');
 
-    // Shuffled question state
-    const questions = q.questions.map((qq, i) => ({ ...qq, idx: i }));
+    // Per-module 'seen' tracking — pick unseen first, reset cycle when exhausted.
+    const SEEN_KEY = `nhbrc.quiz.seen.${modId}`;
+    let seen = new Set();
+    try { seen = new Set(JSON.parse(localStorage.getItem(SEEN_KEY) || '[]')); } catch {}
+    const QUIZ_SIZE = Math.min(8, q.questions.length); // up to 8 per attempt
+    if (seen.size >= q.questions.length) seen = new Set(); // new cycle
+    const indexed = q.questions.map((qq, i) => ({ ...qq, qid: `${modId}#${i}` }));
+    const unseen = indexed.filter(x => !seen.has(x.qid));
+    const seenList = indexed.filter(x => seen.has(x.qid));
+    const pool = (unseen.length >= QUIZ_SIZE ? unseen : unseen.concat(shuffle(seenList)));
+    const picked = shuffle(pool).slice(0, QUIZ_SIZE);
+    for (const x of picked) seen.add(x.qid);
+    localStorage.setItem(SEEN_KEY, JSON.stringify([...seen]));
+
+    // Also shuffle each question's option order so position-memorisation doesn't help.
+    const questions = picked.map((qq, i) => ({ ...shuffleOpts(qq), idx: i }));
     let answered = 0, correct = 0;
 
     let html = `<div class="meta" style="margin-bottom:8px">${questions.length} questions · pick the best answer</div>`;
