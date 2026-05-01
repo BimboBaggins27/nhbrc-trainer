@@ -56,6 +56,8 @@
   }
 
   function isLicensed() {
+    // Master account always bypasses the paywall.
+    if (window.NHBRC_AUTH && window.NHBRC_AUTH.isMaster && window.NHBRC_AUTH.isMaster()) return true;
     // No backend wired yet → app stays fully open for demo / development.
     if (!API_BASE) return true;
     const lic = read();

@@ -1,11 +1,13 @@
 (() => {
   const D = window.NHBRC_DATA;
   const L = window.NHBRC_LIBRARY || { articles: [], pdfs: [], byModule: {} };
+  const A = window.NHBRC_AUTH;
   const articleById = Object.fromEntries((L.articles || []).map(a => [a.id, a]));
   const view = document.getElementById('view');
   const titleEl = document.getElementById('title');
   const backBtn = document.getElementById('backBtn');
   const installBtn = document.getElementById('installBtn');
+  const accountBtn = document.getElementById('accountBtn');
   const tabs = document.querySelectorAll('.tab');
   const STORE_KEY = 'nhbrc.progress.v1';
 
@@ -875,6 +877,181 @@
       }));
   }
 
+  // ---------- Landing & auth ----------
+
+  function viewLanding() {
+    titleEl.textContent = 'NHBRC Trainer';
+    backBtn.classList.add('hidden');
+    // Hide tabbar on the unauthenticated landing
+    document.body.classList.add('no-tabs');
+    const u = A && A.currentUser();
+    view.innerHTML = `
+      <section class="landing">
+        <div class="landing-hero">
+          <div class="landing-flag">
+            <svg viewBox="0 0 64 64" width="72" height="72" aria-hidden="true">
+              <polygon points="32,4 60,28 60,60 4,60 4,28" fill="#fff"/>
+              <polygon points="32,12 50,28 50,52 14,52 14,28" fill="#0b6e3f"/>
+              <rect x="26" y="38" width="12" height="14" fill="#fff"/>
+            </svg>
+          </div>
+          <h1>NHBRC Trainer</h1>
+          <p class="landing-tag">South African Building Regulations & NHBRC — a study app you can use offline, on your phone.</p>
+        </div>
+
+        <div class="landing-cta">
+          ${u ? `<button class="btn primary big" data-action="enter">Continue as ${escapeHtml(u.username || u.email)}</button>` : ''}
+          <button class="btn primary big" data-action="signup">Create free account</button>
+          <button class="btn secondary big" data-action="login">Log in</button>
+        </div>
+
+        <div class="landing-features">
+          <div class="lf-card"><div class="lf-emoji">📚</div><h3>17 study modules</h3><p>Every Part of SANS 10400 distilled — Foundations, Walls, Roofs, Drainage, Fire, Energy.</p></div>
+          <div class="lf-card"><div class="lf-emoji">🏆</div><h3>Master Quiz</h3><p>25 random questions per attempt. Smart coverage — every module gets tested before any repeat.</p></div>
+          <div class="lf-card"><div class="lf-emoji">📑</div><h3>Bundled legislation</h3><p>NBR 2008 + Act 103 of 1977 + amendments — public-domain SA legislation, offline.</p></div>
+          <div class="lf-card"><div class="lf-emoji">🔗</div><h3>Source-linked</h3><p>Curated index of articles and the official SABS / NHBRC purchase pages — one tap to the source.</p></div>
+          <div class="lf-card"><div class="lf-emoji">📱</div><h3>Installable PWA</h3><p>Add to home screen on iPhone or Android — works fully offline once installed.</p></div>
+          <div class="lf-card"><div class="lf-emoji">🔒</div><h3>Privacy-first</h3><p>Account + progress saved on your device. No analytics, no tracking, no third-party cookies.</p></div>
+        </div>
+
+        <div class="landing-pricing">
+          <h2>Pricing</h2>
+          <div class="price-row" style="justify-content:space-between">
+            <div>
+              <div class="price-amount">R 399</div>
+              <div class="price-meta">Lifetime · once · all features</div>
+            </div>
+            <button class="btn primary" data-action="signup">Get started</button>
+          </div>
+          <p class="meta">Free account gives you the modules, glossary and per-module quizzes. Master Quiz + future updates require lifetime access.</p>
+        </div>
+
+        <p class="meta landing-foot">
+          <a data-action="legal">Terms, privacy & sources →</a>
+          ·
+          ${A ? `${A.userCount()} accounts on this device` : ''}
+        </p>
+      </section>`;
+    view.querySelectorAll('[data-action="signup"]').forEach(el => el.addEventListener('click', () => route.go('signup')));
+    view.querySelectorAll('[data-action="login"]').forEach(el => el.addEventListener('click', () => route.go('login')));
+    view.querySelectorAll('[data-action="enter"]').forEach(el => el.addEventListener('click', () => { route.history = []; route.go('home'); }));
+    view.querySelectorAll('[data-action="legal"]').forEach(el => el.addEventListener('click', () => route.go('legal')));
+  }
+
+  function viewSignup() {
+    titleEl.textContent = 'Create account';
+    backBtn.classList.remove('hidden');
+    document.body.classList.add('no-tabs');
+    view.innerHTML = `<article class="auth-card">
+      <h2>Create your account</h2>
+      <p class="meta">Email + password. We'll send a 6-digit code to verify it's you.</p>
+      <form id="signupForm" class="auth-form">
+        <label>Email<input type="email" name="email" required autocomplete="email" placeholder="you@example.com"/></label>
+        <label>Password<input type="password" name="password" required minlength="8" autocomplete="new-password" placeholder="At least 8 characters"/></label>
+        <div id="signupErr" class="auth-err"></div>
+        <button class="btn primary big" type="submit">Send verification code</button>
+      </form>
+      <p class="meta">Already have an account? <a data-action="login">Log in →</a></p>
+    </article>`;
+    const form = document.getElementById('signupForm');
+    const err = document.getElementById('signupErr');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      err.textContent = '';
+      const fd = new FormData(form);
+      const email = fd.get('email');
+      const password = fd.get('password');
+      const r = await A.signup(email, password);
+      if (!r.ok) { err.textContent = r.error || 'Signup failed.'; return; }
+      // Local-mode dev shortcut: pass the freshly-minted code on to the verify view
+      route.go('verify', { email, devCode: r.code || null });
+    });
+    view.querySelectorAll('[data-action="login"]').forEach(el => el.addEventListener('click', () => route.go('login')));
+  }
+
+  function viewVerify(payload) {
+    const email = (payload && payload.email) || '';
+    const devCode = payload && payload.devCode;
+    titleEl.textContent = 'Verify email';
+    backBtn.classList.remove('hidden');
+    document.body.classList.add('no-tabs');
+    view.innerHTML = `<article class="auth-card">
+      <h2>Verify your email</h2>
+      <p class="meta">Enter the 6-digit code we sent to <strong>${escapeHtml(email)}</strong>.</p>
+      ${devCode ? `<div class="callout warn"><strong>Dev mode</strong> — no email backend wired yet, so your code is shown here:<br/><span class="dev-code">${escapeHtml(devCode)}</span></div>` : ''}
+      <form id="verifyForm" class="auth-form">
+        <label>6-digit code<input name="code" required pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code" placeholder="123456"/></label>
+        <div id="verifyErr" class="auth-err"></div>
+        <button class="btn primary big" type="submit">Verify & sign in</button>
+      </form>
+      <p class="meta">Wrong email? <a data-action="signup">Start over →</a></p>
+    </article>`;
+    const form = document.getElementById('verifyForm');
+    const err = document.getElementById('verifyErr');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      err.textContent = '';
+      const code = new FormData(form).get('code');
+      const r = await A.verify(email, code);
+      if (!r.ok) { err.textContent = r.error || 'Verification failed.'; return; }
+      document.body.classList.remove('no-tabs');
+      route.history = [];
+      route.go('home');
+    });
+    view.querySelectorAll('[data-action="signup"]').forEach(el => el.addEventListener('click', () => route.go('signup')));
+  }
+
+  function viewLogin() {
+    titleEl.textContent = 'Log in';
+    backBtn.classList.remove('hidden');
+    document.body.classList.add('no-tabs');
+    view.innerHTML = `<article class="auth-card">
+      <h2>Welcome back</h2>
+      <form id="loginForm" class="auth-form">
+        <label>Email or username<input name="id" required autocomplete="username" placeholder="you@example.com or RU1"/></label>
+        <label>Password<input type="password" name="password" required autocomplete="current-password" placeholder="Your password"/></label>
+        <div id="loginErr" class="auth-err"></div>
+        <button class="btn primary big" type="submit">Log in</button>
+      </form>
+      <p class="meta">No account yet? <a data-action="signup">Create one →</a></p>
+    </article>`;
+    const form = document.getElementById('loginForm');
+    const err = document.getElementById('loginErr');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      err.textContent = '';
+      const fd = new FormData(form);
+      const r = await A.login(fd.get('id'), fd.get('password'));
+      if (!r.ok) { err.textContent = r.error || 'Login failed.'; return; }
+      document.body.classList.remove('no-tabs');
+      route.history = [];
+      route.go('home');
+    });
+    view.querySelectorAll('[data-action="signup"]').forEach(el => el.addEventListener('click', () => route.go('signup')));
+  }
+
+  function viewAdmin() {
+    if (!A || !A.isMaster()) { route.go('home'); return; }
+    titleEl.textContent = 'Admin';
+    backBtn.classList.remove('hidden');
+    setActiveTab('home');
+    const users = A.listUsers();
+    view.innerHTML = `<article class="lesson legal-page">
+      <h2>👑 Master admin</h2>
+      <p class="meta">Logged in as the master account (${escapeHtml(A.currentUser().username || '')}).
+      You have unrestricted access — paywall and verification are bypassed.</p>
+      <h3>User accounts on this device (${users.length})</h3>
+      <div class="admin-list">
+        ${users.map(u => `<div class="admin-row">
+          <div><strong>${escapeHtml(u.username || u.email)}</strong>${u.role === 'master' ? ' <span class="badge gold">MASTER</span>' : ''}</div>
+          <div class="meta">${escapeHtml(u.email || '—')} · ${u.verified ? 'verified' : 'unverified'} · ${escapeHtml(u.createdAt || '')}</div>
+        </div>`).join('') || '<div class="empty">No accounts yet.</div>'}
+      </div>
+      <div class="actions"><button class="btn secondary" data-action="back">Back</button></div>
+    </article>`;
+    view.querySelectorAll('[data-action="back"]').forEach(el => el.addEventListener('click', () => route.back()));
+  }
+
   // ---------- Helpers ----------
 
   function escapeHtml(s) {
@@ -900,6 +1077,16 @@
   function render() {
     const { name, payload } = route.current;
     window.scrollTo(0, 0);
+    // Auth gate — if not signed in and not on a public route, show landing.
+    const PUBLIC_ROUTES = new Set(['landing', 'login', 'signup', 'verify', 'legal']);
+    if (A && !A.isAuthenticated() && !PUBLIC_ROUTES.has(name)) {
+      return viewLanding();
+    }
+    if (name === 'landing') return viewLanding();
+    if (name === 'login')   return viewLogin();
+    if (name === 'signup')  return viewSignup();
+    if (name === 'verify')  return viewVerify(payload);
+    if (name === 'admin')   return viewAdmin();
     if (name === 'module') return viewModule(payload);
     if (name === 'about') return viewAbout();
     if (name === 'quiz') return payload ? viewQuiz(payload) : viewQuizList();
@@ -1031,6 +1218,33 @@
     view.querySelectorAll('[data-action="back"]').forEach(el =>
       el.addEventListener('click', () => route.back()));
   }
+
+  // Account button — logout + admin shortcut
+  function refreshChrome() {
+    if (A && A.isAuthenticated()) {
+      accountBtn.classList.remove('hidden');
+      document.body.classList.remove('no-tabs');
+    } else {
+      accountBtn.classList.add('hidden');
+      document.body.classList.add('no-tabs');
+    }
+  }
+  accountBtn.addEventListener('click', () => {
+    if (!A || !A.isAuthenticated()) return;
+    const u = A.currentUser();
+    const isMaster = A.isMaster();
+    const choice = prompt(
+      `Signed in as ${u.username || u.email} (${u.role || 'user'}).\n\n` +
+      (isMaster ? 'Type "admin" to open the admin panel, "logout" to sign out, or close.' : 'Type "logout" to sign out, or close.'),
+      ''
+    );
+    if (!choice) return;
+    const c = choice.trim().toLowerCase();
+    if (c === 'logout') { A.logout(); route.history = []; route.current = { name: 'landing', payload: null }; render(); }
+    else if (c === 'admin' && isMaster) { route.go('admin'); }
+  });
+  if (A) A.subscribe(refreshChrome);
+  refreshChrome();
 
   // Tabs
   tabs.forEach(t => t.addEventListener('click', () => {
