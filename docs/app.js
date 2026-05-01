@@ -75,13 +75,13 @@
           </svg>
         </div>
       </div>
-      <a class="card warn-banner" data-action="about">
+      <a class="card warn-banner" data-action="legal">
         <div class="warn-icon">⚠️</div>
         <div class="warn-text">
           <strong>Independent study aid — not affiliated with NHBRC or SABS.</strong>
           This trainer is a learning service. The official SANS 10400 standards (SABS, paid)
           and NHBRC Home Building Manual must be obtained from their publishers and consulted
-          before any plan submission. Tap for sources & licensing →
+          before any plan submission. Tap for Terms, Privacy & Sources →
         </div>
       </a>
       <a class="card source-card" data-action="about">
@@ -124,6 +124,12 @@
       el.addEventListener('click', (e) => {
         e.preventDefault();
         route.go('about');
+      });
+    });
+    view.querySelectorAll('[data-action="legal"]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        route.go('legal');
       });
     });
   }
@@ -494,18 +500,69 @@
     lb.addEventListener('click', close);
   }
 
-  // ---------- Master Quiz pool & history ----------
+  // ---------- Master Quiz pool, coverage, history ----------
   const MASTER_KEY = 'nhbrc.master.v1';
+  const SEEN_KEY = 'nhbrc.master.seen.v1';
   const MASTER_SIZE = 25;
   function masterPool() {
     const pool = [];
     for (const q of D.quizzes) {
       const m = D.modules.find(x => x.id === q.moduleId);
-      for (const qq of q.questions) {
-        pool.push({ ...qq, moduleId: q.moduleId, moduleTitle: m?.title || q.title, moduleIcon: m?.icon || '❓' });
-      }
+      q.questions.forEach((qq, idx) => {
+        pool.push({
+          ...qq,
+          qid: `${q.moduleId}#${idx}`,
+          moduleId: q.moduleId,
+          moduleTitle: m?.title || q.title,
+          moduleIcon: m?.icon || '❓',
+        });
+      });
     }
     return pool;
+  }
+  function loadSeen() {
+    try { return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) || '[]')); }
+    catch { return new Set(); }
+  }
+  function saveSeen(set) { localStorage.setItem(SEEN_KEY, JSON.stringify([...set])); }
+  function resetSeen() { localStorage.removeItem(SEEN_KEY); }
+
+  // Pick MASTER_SIZE questions:
+  //  - Stage 1: cover every module with at least one question (preferring unseen)
+  //  - Stage 2: fill remaining slots from anywhere, preferring unseen across attempts
+  //  - Cycle resets automatically once all questions have been seen
+  function pickMasterQuestions(pool, n) {
+    let seen = loadSeen();
+    if (seen.size >= pool.length) { seen = new Set(); }  // new cycle
+    const byMod = {};
+    for (const q of pool) (byMod[q.moduleId] = byMod[q.moduleId] || []).push(q);
+    const modules = shuffle(Object.keys(byMod));
+    const picked = [];
+    const usedIds = new Set();
+    // Stage 1 — one per module
+    for (const mid of modules) {
+      if (picked.length >= n) break;
+      const cands = byMod[mid].filter(q => !usedIds.has(q.qid));
+      if (!cands.length) continue;
+      const unseen = cands.filter(q => !seen.has(q.qid));
+      const pickFrom = unseen.length ? unseen : cands;
+      const q = pickFrom[Math.floor(Math.random() * pickFrom.length)];
+      picked.push(q); usedIds.add(q.qid);
+    }
+    // Stage 2 — fill remaining
+    const remaining = pool.filter(q => !usedIds.has(q.qid));
+    const unseenRem = remaining.filter(q => !seen.has(q.qid));
+    const need = n - picked.length;
+    const fillFrom = unseenRem.length >= need ? unseenRem : remaining;
+    for (const q of shuffle(fillFrom)) {
+      if (picked.length >= n) break;
+      picked.push(q); usedIds.add(q.qid);
+    }
+    // Mark these as seen
+    for (const q of picked) seen.add(q.qid);
+    // If we just exhausted the pool, the next call will reset
+    saveSeen(seen);
+    return shuffle(picked);
   }
   function masterHistory() {
     try { return JSON.parse(localStorage.getItem(MASTER_KEY)) || []; }
@@ -539,17 +596,23 @@
     const best = hist.reduce((m, h) => h.correct > m ? h.correct : m, 0);
     const last = hist[0];
 
+    const seen = loadSeen();
+    const cyclePct = Math.min(100, Math.round(seen.size / pool.length * 100));
+
     let html = `<div class="hero" style="background:linear-gradient(135deg,#7c4f00,#f5b800)">
       <h2>Test yourself</h2><p>Pick any topic — or take the Master Quiz for a randomised mix.</p></div>
 
       <a class="card master-card" data-action="master">
         <h3>🏆 Master Quiz <span class="badge gold">${MASTER_SIZE} random</span></h3>
-        <div class="meta">${MASTER_SIZE} random questions from all ${pool.length} across every module — different every time.</div>
+        <div class="meta">${MASTER_SIZE} questions per attempt, picked to cover every module and avoid repeats until the whole pool of ${pool.length} is exhausted.</div>
+        <div class="progressbar"><span style="width:${cyclePct}%"></span></div>
+        <div class="meta">Cycle coverage: <strong>${seen.size}/${pool.length}</strong> seen this cycle</div>
         <div class="meta master-stats">
           ${hist.length ? `Attempts: <strong>${hist.length}</strong>` : 'No attempts yet'}
           ${best ? ` · Best: <strong>${best}/${MASTER_SIZE}</strong>` : ''}
           ${last ? ` · Last: <strong>${last.correct}/${last.total}</strong> on ${escapeHtml(fmtTime(last.at))}` : ''}
         </div>
+        ${seen.size > 0 ? `<div class="meta" style="margin-top:6px"><a data-action="reset-cycle" class="btn-link">Reset cycle</a></div>` : ''}
       </a>
 
       ${hist.length ? `<div class="section-title">Master Quiz history</div>
@@ -575,20 +638,43 @@
     view.querySelectorAll('[data-action="quiz"]').forEach(el =>
       el.addEventListener('click', () => route.go('quiz', el.dataset.id)));
     view.querySelectorAll('[data-action="master"]').forEach(el =>
-      el.addEventListener('click', () => route.go('master', null)));
+      el.addEventListener('click', (e) => {
+        // ignore clicks that bubble up from the inner reset link
+        if (e.target.closest('[data-action="reset-cycle"]')) return;
+        route.go('master', null);
+      }));
+    view.querySelectorAll('[data-action="reset-cycle"]').forEach(el =>
+      el.addEventListener('click', (e) => {
+        e.stopPropagation(); e.preventDefault();
+        if (confirm('Start a fresh cycle? Past score history will be kept.')) {
+          resetSeen();
+          render();
+        }
+      }));
   }
 
   function viewMasterQuiz() {
+    if (window.NHBRC_LICENSE && !window.NHBRC_LICENSE.isLicensed()) {
+      return viewUnlock('master');
+    }
     const pool = masterPool();
     const n = Math.min(MASTER_SIZE, pool.length);
-    const questions = shuffle(pool).slice(0, n);
+    const seenBefore = loadSeen().size;
+    const questions = pickMasterQuestions(pool, n);
+    const seenAfter = loadSeen().size;
+    const cycleNote = seenAfter <= n
+      ? 'Fresh cycle — every question is new.'
+      : (seenAfter >= pool.length
+          ? 'You\'ve now seen every question once. Next attempt starts a new cycle.'
+          : `Coverage so far this cycle: ${seenAfter}/${pool.length} questions seen.`);
+    const moduleSet = new Set(questions.map(q => q.moduleId));
     titleEl.textContent = 'Master Quiz';
     backBtn.classList.remove('hidden');
     setActiveTab('quiz');
     const startedAt = Date.now();
 
     let answered = 0, correct = 0;
-    let html = `<div class="meta" style="margin-bottom:8px">🏆 ${n} random questions · pick the best answer · score is logged when you finish all questions</div>`;
+    let html = `<div class="meta" style="margin-bottom:8px">🏆 ${n} random questions across ${moduleSet.size}/${Object.keys(D.quizzes.reduce((m,q)=>{m[q.moduleId]=1;return m;},{})).length} modules · ${escapeHtml(cycleNote)}</div>`;
     questions.forEach((qq, qi) => {
       html += `<div class="quiz-q" data-q="${qi}">
         <p class="qstem"><span class="q-mod">${qq.moduleIcon} ${escapeHtml(qq.moduleTitle)}</span><br>${qi + 1}. ${escapeHtml(qq.q)}</p>
@@ -823,7 +909,127 @@
     if (name === 'library') return viewLibrary();
     if (name === 'article') return viewArticle(payload);
     if (name === 'master') return viewMasterQuiz();
+    if (name === 'legal') return viewLegal();
+    if (name === 'unlock') return viewUnlock(payload || 'general');
     return viewHome();
+  }
+
+  function viewUnlock(context) {
+    titleEl.textContent = 'Unlock full access';
+    backBtn.classList.remove('hidden');
+    setActiveTab(context === 'master' ? 'quiz' : 'home');
+    const PAYSTACK_LINK = 'https://paystack.com/pay/nhbrc-trainer-lifetime'; // placeholder — replace with your real Paystack page slug
+    view.innerHTML = `<article class="lesson legal-page">
+      <div class="hero" style="background:linear-gradient(135deg,#7c4f00,#f5b800)">
+        <h2>🔓 Unlock the Master Quiz & all premium features</h2>
+        <p>Lifetime access. One payment. Updates included.</p>
+      </div>
+      <ul class="feature-list">
+        <li>✅ All 17 study modules</li>
+        <li>✅ All 56 per-module quiz questions</li>
+        <li>🏆 Master Quiz with smart coverage tracking</li>
+        <li>📚 Library + curated outbound index</li>
+        <li>📜 Bundled public-domain SA legislation PDFs</li>
+        <li>📱 Installable PWA — works offline once installed</li>
+      </ul>
+      <div class="price-row">
+        <div class="price"><span class="price-amount">R 399</span><span class="price-meta">once · lifetime</span></div>
+        <a class="btn primary big" href="${PAYSTACK_LINK}" target="_blank" rel="noopener">Buy lifetime — R 399</a>
+      </div>
+      <p class="meta" style="margin-top:14px">After payment you'll receive an email with a one-tap activation link.
+      Tap it on the same device you want to use the app on.</p>
+      <p class="meta">Already paid? Open your activation email and tap the unlock link again.</p>
+      <div class="actions"><button class="btn secondary" data-action="back">Back</button></div>
+    </article>`;
+    view.querySelectorAll('[data-action="back"]').forEach(el =>
+      el.addEventListener('click', () => route.back()));
+  }
+
+  function viewLegal() {
+    titleEl.textContent = 'Terms, Privacy & Sources';
+    backBtn.classList.remove('hidden');
+    setActiveTab('home');
+    view.innerHTML = `<article class="lesson legal-page">
+      <h2>📜 Terms, Privacy & Sources</h2>
+      <p class="meta">Effective ${escapeHtml(new Date().toISOString().slice(0,10))} · NHBRC Trainer v2.0</p>
+
+      <h3>What this app is</h3>
+      <p>NHBRC Trainer is an <strong>independent study aid</strong> for South African
+      National Building Regulations and the role of the NHBRC. It is built and operated
+      by an independent author and is <strong>not affiliated with, endorsed by, or
+      a substitute for</strong> the South African Bureau of Standards (SABS) or the
+      National Home Builders Registration Council (NHBRC).</p>
+
+      <h3>What you are paying for</h3>
+      <p>If you purchased lifetime or subscription access, you are paying for the
+      <strong>service</strong>: the curated study modules, quizzes, master quiz with
+      coverage tracking, glossary, search, offline PWA delivery, and the curated index
+      of public sources. You are <strong>not</strong> purchasing the underlying
+      regulations, standards, or third-party articles — those remain the property of
+      their respective publishers and are linked, not redistributed, by this app.</p>
+
+      <h3>Sources & licensing</h3>
+      <ul>
+        <li><strong>Original content (© the author of this app)</strong> — module text,
+        all quiz questions and explanations, glossary definitions, the master-quiz
+        coverage system, and the trainer UX. All rights reserved.</li>
+        <li><strong>South African legislation (public domain)</strong> — Act 103 of
+        1977 and the National Building Regulations are SA government legislation.
+        The PDFs bundled in the Library tab are official copies hosted by Cape Town,
+        Msunduzi, NRCS, the DTIC, and Law Explorer; they are reproducible without
+        licence under SA copyright law.</li>
+        <li><strong>SANS 10400 standards</strong> — the per-part standards (A through
+        XA) are <strong>copyright SABS</strong>. They are not bundled. Purchase from
+        the <a href="https://store.sabs.co.za/" target="_blank" rel="noopener">SABS
+        Webstore</a>.</li>
+        <li><strong>NHBRC Home Building Manual & Code of Conduct</strong> —
+        copyright NHBRC. They are not bundled. Obtain from
+        <a href="https://www.nhbrc.org.za/publications/" target="_blank" rel="noopener">nhbrc.org.za/publications</a>
+        or your local NHBRC branch.</li>
+        <li><strong>sans10400.co.za articles</strong> — copyright the original blog
+        author. The Library tab provides a curated index with outbound links; the
+        article text and images are not bundled.</li>
+      </ul>
+
+      <h3>No legal or professional advice</h3>
+      <p>The content in this app is <strong>educational only</strong>. It is not legal,
+      engineering, or architectural advice. SANS 10400 has been progressively superseded
+      part-by-part since 2010 — for any actual plan submission you must work to the
+      <strong>currently published</strong> SANS 10400 Part for the topic, the current
+      NHBRC Home Building Manual, and the requirements of your local authority. Always
+      consult a registered competent person.</p>
+
+      <h3>Liability</h3>
+      <p>The app is provided "as is", without any warranty of accuracy, completeness,
+      or fitness for any particular purpose. To the maximum extent permitted by SA law,
+      the author accepts no liability for any loss, damage, or cost arising from use of
+      the app, including any reliance on its content for plan submissions, contracts,
+      or compliance decisions.</p>
+
+      <h3>Privacy</h3>
+      <p>This app stores study progress and quiz history <strong>only on your own
+      device</strong>, in your browser's localStorage. Nothing is sent to a server.
+      Reading a module, taking a quiz, or recording your name (if asked in a future
+      version) does not generate any network request beyond loading the app's own
+      static files. There is no analytics, no advertising, and no third-party tracker.</p>
+      <p>If you purchased access, your email and licence-key payload are stored only as
+      needed to validate that licence; the payment processor (Paystack) handles your
+      card details directly and the app never sees them.</p>
+
+      <h3>Refunds</h3>
+      <p>Lifetime purchases are refundable within 7 days of purchase if you have not
+      consumed substantial content. Email refund requests to the address listed on the
+      site checkout page.</p>
+
+      <h3>Contact</h3>
+      <p>Issues, factual corrections, or commercial enquiries: please open an issue at
+      <a href="https://github.com/BimboBaggins27/nhbrc-trainer/issues" target="_blank" rel="noopener">github.com/BimboBaggins27/nhbrc-trainer</a>
+      or use the contact email shown at the point of sale.</p>
+
+      <div class="actions"><button class="btn secondary" data-action="back">Back</button></div>
+    </article>`;
+    view.querySelectorAll('[data-action="back"]').forEach(el =>
+      el.addEventListener('click', () => route.back()));
   }
 
   // Tabs
@@ -858,6 +1064,7 @@
     const h = location.hash.replace(/^#/, '');
     if (!h) return;
     if (h === 'about') { route.current = { name: 'about', payload: null }; }
+    else if (h === 'legal' || h === 'terms' || h === 'privacy') { route.current = { name: 'legal', payload: null }; }
     else if (h === 'glossary') { route.current = { name: 'glossary', payload: null }; }
     else if (h === 'progress') { route.current = { name: 'progress', payload: null }; }
     else if (h === 'library') { route.current = { name: 'library', payload: null }; }

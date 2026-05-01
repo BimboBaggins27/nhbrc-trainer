@@ -708,3 +708,29 @@ figcaption {
 .ext-card .pdf-icon { color: #f5b800; }
 .ext-arrow { font-size: 11px; opacity: .7; margin-left: 4px; }
 .meta-inline { font-size: 12px; font-weight: 400; opacity: .7; text-transform: none; letter-spacing: 0; }
+
+/* Unlock + pricing */
+.feature-list { list-style: none; margin: 14px 0; padding: 0; }
+.feature-list li {
+  padding: 8px 12px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px;
+  margin-bottom: 6px;
+}
+.price-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  background: rgba(245,184,0,.10);
+  border: 1px solid rgba(245,184,0,.45);
+  border-radius: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.price-amount { font-size: 28px; font-weight: 800; color: #f5d56a; display: block; }
+.price-meta { font-size: 12px; opacity: .75; }
+.btn.primary { background: #f5b800; color: #221a00; border: 0; }
+.btn.big { padding: 14px 22px; font-size: 15px; font-weight: 700; }
+.legal-page h3 { margin-top: 18px; color: #6fdc9a; }
+.legal-page ul { margin: 6px 0 12px 18px; }

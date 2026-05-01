@@ -1,0 +1,20 @@
+name = "nhbrc-payments"
+main = "worker.js"
+compatibility_date = "2026-01-01"
+
+[vars]
+APP_URL = "https://bimbobaggins27.github.io/nhbrc-trainer/"
+
+# Create KV namespaces with `wrangler kv:namespace create LICENSES` and `... TOKENS`,
+# then paste the IDs here.
+[[kv_namespaces]]
+binding = "LICENSES"
+id = "REPLACE_WITH_CF_KV_ID"
+
+[[kv_namespaces]]
+binding = "TOKENS"
+id = "REPLACE_WITH_CF_KV_ID"
+
+# Set with: wrangler secret put PAYSTACK_SECRET
+# Set with: wrangler secret put LICENSE_SIGNING_KEY
+# Set with: wrangler secret put RESEND_API_KEY
