@@ -1714,7 +1714,7 @@
     titleEl.textContent = 'Unlock full access';
     backBtn.classList.remove('hidden');
     setActiveTab(context === 'master' ? 'quiz' : 'home');
-    const PAYSTACK_LINK = 'https://paystack.com/pay/nhbrc-trainer-lifetime'; // placeholder — replace with your real Paystack page slug
+    const PAYSTACK_LINK = 'https://paystack.shop/pay/f2qzss5120';
     view.innerHTML = `<article class="lesson legal-page">
       <div class="hero" style="background:linear-gradient(135deg,#7c4f00,#f5b800)">
         <h2>🔓 Unlock the full trainer</h2>

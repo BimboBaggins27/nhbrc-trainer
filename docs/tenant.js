@@ -33,7 +33,7 @@ window.TRAINER_TENANT = {
     founderPrice: 199,
     listPrice: 399,
     founderSeats: 50,
-    paystackPayPage: "https://paystack.com/pay/nhbrc-trainer-lifetime",
+    paystackPayPage: "https://paystack.shop/pay/f2qzss5120",
   },
   // Marketing copy (drives landing + checkout)
   marketing: {
