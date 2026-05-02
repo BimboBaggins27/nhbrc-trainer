@@ -739,6 +739,46 @@ figcaption {
 .ss-item strong { font-size: 18px; color: #6fdc9a; }
 .ss-lbl { color: var(--muted); font-size: 11px; }
 
+/* Big drill-in tiles on the Learn home (thumb-friendly) */
+.big-tile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  margin: 8px 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  min-height: 72px;
+  transition: background .15s, border-color .15s, transform .1s;
+}
+.big-tile:active { transform: scale(.98); }
+.big-tile:hover { background: rgba(11,110,63,.10); border-color: rgba(11,110,63,.45); }
+.bt-icon {
+  flex: 0 0 48px;
+  width: 48px; height: 48px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(11,110,63,.15);
+  border-radius: 12px;
+  font-size: 24px;
+}
+.bt-text { flex: 1; min-width: 0; }
+.bt-title {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+.bt-sub {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+.bt-chev { opacity: .4; font-size: 24px; flex: 0 0 auto; }
+
 /* Compact one-line stats */
 .status-line {
   display: flex; align-items: center; justify-content: center;

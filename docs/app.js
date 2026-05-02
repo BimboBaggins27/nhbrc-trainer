@@ -141,66 +141,33 @@
         <div class="qa-text"><div class="qa-eyebrow">${lastRead ? 'Continue' : 'Start with'}</div><div class="qa-title">${continueMod.icon} ${escapeHtml(continueMod.title)}</div></div>
       </a>` : ''}
 
-      <div class="filter-row" id="learnFilter">
-        <button class="chip-btn active" data-section="modules">📘 Modules · ${D.modules.length}</button>
-        <button class="chip-btn" data-section="quizzes">❓ Quizzes</button>
-        <button class="chip-btn" data-section="glossary">🔤 Glossary</button>
-      </div>
-
-      <div id="learnSection"></div>
+      <a class="big-tile" data-action="go-modules">
+        <div class="bt-icon">📘</div>
+        <div class="bt-text"><div class="bt-title">Modules</div><div class="bt-sub">${D.modules.length} study modules · Parts A → XA · ${readMods}/${totalMods} read</div></div>
+        <div class="bt-chev">›</div>
+      </a>
+      <a class="big-tile" data-action="go-quizzes">
+        <div class="bt-icon">❓</div>
+        <div class="bt-text"><div class="bt-title">Quizzes</div><div class="bt-sub">Master Quiz · Mock NHBRC test · per-module quizzes</div></div>
+        <div class="bt-chev">›</div>
+      </a>
+      <a class="big-tile" data-action="go-glossary">
+        <div class="bt-icon">🔤</div>
+        <div class="bt-text"><div class="bt-title">Glossary</div><div class="bt-sub">${(D.glossary || []).length} key terms — searchable</div></div>
+        <div class="bt-chev">›</div>
+      </a>
     `;
     view.innerHTML = html;
 
-    function renderSection(which) {
-      const sect = document.getElementById('learnSection');
-      if (which === 'quizzes') return renderQuizSection(sect);
-      if (which === 'glossary') return renderGlossarySection(sect);
-      renderModulesSection(sect);
-    }
-    function renderModulesSection(sect) {
-      let h = '';
-      for (const m of D.modules) {
-        const wasRead = (progress.read || {})[m.id];
-        const quiz = (progress.quizzes || {})[m.id];
-        h += `
-          <a class="card" data-action="open-module" data-id="${m.id}">
-            <h3><span style="font-size:22px">${m.icon}</span> ${escapeHtml(m.title)}
-              ${wasRead ? '<span class="badge">Read</span>' : ''}
-              ${quiz ? `<span class="badge gold">${quiz.best}/${quiz.total}</span>` : ''}
-            </h3>
-            <div class="meta">${escapeHtml(m.summary)}</div>
-            <div class="tag-row"><span class="tag">${m.tag}</span></div>
-          </a>`;
-      }
-      sect.innerHTML = h;
-      sect.querySelectorAll('[data-action="open-module"]').forEach(el =>
-        el.addEventListener('click', () => route.go('module', el.dataset.id)));
-    }
-    function renderQuizSection(sect) {
-      sect.innerHTML = '<div id="quizSubview"></div>';
-      const quizSub = document.getElementById('quizSubview');
-      // Reuse the existing quiz-list renderer logic — point it at quizSub
-      renderQuizList(quizSub);
-    }
-    function renderGlossarySection(sect) {
-      sect.innerHTML = '<div id="glossarySubview"></div>';
-      renderGlossaryList(document.getElementById('glossarySubview'));
-    }
-
-    document.querySelectorAll('#learnFilter .chip-btn').forEach(b => b.addEventListener('click', () => {
-      document.querySelectorAll('#learnFilter .chip-btn').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      renderSection(b.dataset.section);
-    }));
-    renderSection('modules');
-
     view.querySelectorAll('[data-action="open-module"]').forEach(el =>
       el.addEventListener('click', () => route.go('module', el.dataset.id)));
-    view.querySelectorAll('[data-action="mock"]').forEach(el =>
-      el.addEventListener('click', () => route.go('mock', null)));
-    view.querySelectorAll('[data-action="master"]').forEach(el =>
-      el.addEventListener('click', () => route.go('master', null)));
-    return; // new layout complete — skip the legacy module loop below
+    view.querySelectorAll('[data-action="go-modules"]').forEach(el =>
+      el.addEventListener('click', () => route.go('modules-list')));
+    view.querySelectorAll('[data-action="go-quizzes"]').forEach(el =>
+      el.addEventListener('click', () => route.go('quizlist')));
+    view.querySelectorAll('[data-action="go-glossary"]').forEach(el =>
+      el.addEventListener('click', () => route.go('glossary')));
+    return; // new tile layout complete — skip the legacy module loop below
     /* eslint-disable */ // legacy below kept temporarily for reference
     for (const m of D.modules) {
       const wasRead = (progress.read || {})[m.id];
@@ -1358,6 +1325,31 @@
   // Tick on first authenticated render
   if (A && A.isAuthenticated()) streakTick();
 
+  // ---------- Modules-list sub-page ----------
+  function viewModulesList() {
+    titleEl.textContent = 'Modules';
+    backBtn.classList.remove('hidden');
+    setActiveTab('home');
+    const progress = store.load();
+    let h = `<p class="meta">${D.modules.length} study modules — every Part of SANS 10400 from A through XA, plus workflow + warranty.</p>`;
+    for (const m of D.modules) {
+      const wasRead = (progress.read || {})[m.id];
+      const quiz = (progress.quizzes || {})[m.id];
+      h += `
+        <a class="card" data-action="open-module" data-id="${m.id}">
+          <h3><span style="font-size:22px">${m.icon}</span> ${escapeHtml(m.title)}
+            ${wasRead ? '<span class="badge">Read</span>' : ''}
+            ${quiz ? `<span class="badge gold">${quiz.best}/${quiz.total}</span>` : ''}
+          </h3>
+          <div class="meta">${escapeHtml(m.summary)}</div>
+          <div class="tag-row"><span class="tag">${m.tag}</span></div>
+        </a>`;
+    }
+    view.innerHTML = h;
+    view.querySelectorAll('[data-action="open-module"]').forEach(el =>
+      el.addEventListener('click', () => route.go('module', el.dataset.id)));
+  }
+
   // ---------- Tools (calculators / forms / checklists) ----------
   function viewTools() {
     titleEl.textContent = 'On-site tools';
@@ -1722,6 +1714,7 @@
     if (name === 'quiz') return 'home';
     if (name === 'master') return 'home';
     if (name === 'mock') return 'home';
+    if (name === 'modules-list') return 'home';
     return name;
   }
 
@@ -1751,6 +1744,7 @@
     if (name === 'tools')  return viewTools();
     if (name === 'privacy')return viewPrivacy();
     if (name === 'me')     return viewMe();
+    if (name === 'modules-list') return viewModulesList();
     if (name === 'legal') return viewLegal();
     if (name === 'unlock') return viewUnlock(payload || 'general');
     return viewHome();
