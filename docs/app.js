@@ -116,49 +116,94 @@
     const totalMods = D.modules.length;
     const readMods = Object.keys(progress.read || {}).length;
     const s = streakTick();
-    const streakBadge = (s.streak >= 2)
-      ? `<span class="streak-pill">🔥 ${s.streak}-day streak${s.best > s.streak ? ` (best ${s.best})` : ''}</span>`
-      : '';
+    // Resume — last-read module
+    const lastReadId = Object.entries(progress.read || {}).sort((a,b)=>b[1]-a[1])[0]?.[0];
+    const lastRead = lastReadId ? D.modules.find(m => m.id === lastReadId) : null;
+    const next = D.modules.find(m => !(progress.read || {})[m.id]) || D.modules[0];
+    const continueMod = lastRead || next;
+    const mockHist = loadMockHistory();
+    const bestMock = mockHist.reduce((m, h) => Math.max(m, h.correct), 0);
+
+    // Show one-time disclaimer modal if not seen yet
+    if (!localStorage.getItem('nhbrc.welcomeSeen.v1')) showWelcomeModal();
 
     let html = `
-      <div class="hero hero-flag">
-        <div class="hero-content">
-          <h2>${D.meta.title}</h2>
-          <p>${D.meta.subtitle}</p>
-        </div>
-        <div class="hero-icon" aria-hidden="true">
-          <svg viewBox="0 0 64 64" width="56" height="56">
-            <polygon points="32,4 60,28 60,60 4,60 4,28" fill="#fff" opacity=".95"/>
-            <polygon points="32,12 50,28 50,52 14,52 14,28" fill="#0b6e3f"/>
-            <rect x="26" y="38" width="12" height="14" fill="#fff"/>
-            <circle cx="32" cy="50" r="1.5" fill="#0b6e3f"/>
-          </svg>
-        </div>
+      <div class="status-strip">
+        <span class="ss-item"><strong>${readMods}/${totalMods}</strong><br><span class="ss-lbl">modules</span></span>
+        <span class="ss-item"><strong>🔥 ${s.streak || 0}</strong><br><span class="ss-lbl">day streak</span></span>
+        <span class="ss-item"><strong>${bestMock}/50</strong><br><span class="ss-lbl">best mock</span></span>
       </div>
-      <a class="card warn-banner" data-action="legal">
-        <div class="warn-icon">⚠️</div>
-        <div class="warn-text">
-          <strong>Independent study aid — not affiliated with NHBRC or SABS.</strong>
-          This trainer is a learning service. The official SANS 10400 standards (SABS, paid)
-          and NHBRC Home Building Manual must be obtained from their publishers and consulted
-          before any plan submission. Tap for Terms, Privacy & Sources →
-        </div>
-      </a>
-      <a class="card source-card" data-action="about">
-        <div class="source-row">
-          <div class="source-icon">ℹ️</div>
-          <div class="source-text">
-            <div class="source-title">About this guide</div>
-            <div class="source-sub">${escapeHtml(D.meta.sourceLabel)}</div>
-          </div>
-          <div class="source-chev">›</div>
-        </div>
-        <div class="progressbar"><span style="width:${(readMods/totalMods*100).toFixed(0)}%"></span></div>
-        <div class="meta" style="margin-top:6px">${readMods} / ${totalMods} modules read · ${(L.pdfs||[]).length} reference PDFs · ${streakBadge || 'No streak yet — open daily to build one'}</div>
-      </a>
-      <div class="section-title">Modules</div>
-    `;
 
+      <div class="quick-actions">
+        ${continueMod ? `<a class="qa-card primary" data-action="open-module" data-id="${continueMod.id}">
+          <div class="qa-icon">▶</div>
+          <div class="qa-text"><div class="qa-eyebrow">${lastRead ? 'Continue' : 'Start with'}</div><div class="qa-title">${continueMod.icon} ${escapeHtml(continueMod.title)}</div></div>
+        </a>` : ''}
+        <a class="qa-card" data-action="mock"><div class="qa-icon">🎓</div><div class="qa-text"><div class="qa-eyebrow">Exam prep</div><div class="qa-title">Mock NHBRC test</div></div></a>
+        <a class="qa-card" data-action="master"><div class="qa-icon">🏆</div><div class="qa-text"><div class="qa-eyebrow">25 random</div><div class="qa-title">Master Quiz</div></div></a>
+      </div>
+
+      <div class="filter-row" id="learnFilter">
+        <button class="chip-btn active" data-section="modules">📘 Modules (${D.modules.length})</button>
+        <button class="chip-btn" data-section="quizzes">❓ Quizzes</button>
+        <button class="chip-btn" data-section="glossary">🔤 Glossary</button>
+      </div>
+
+      <div id="learnSection"></div>
+    `;
+    view.innerHTML = html;
+
+    function renderSection(which) {
+      const sect = document.getElementById('learnSection');
+      if (which === 'quizzes') return renderQuizSection(sect);
+      if (which === 'glossary') return renderGlossarySection(sect);
+      renderModulesSection(sect);
+    }
+    function renderModulesSection(sect) {
+      let h = '';
+      for (const m of D.modules) {
+        const wasRead = (progress.read || {})[m.id];
+        const quiz = (progress.quizzes || {})[m.id];
+        h += `
+          <a class="card" data-action="open-module" data-id="${m.id}">
+            <h3><span style="font-size:22px">${m.icon}</span> ${escapeHtml(m.title)}
+              ${wasRead ? '<span class="badge">Read</span>' : ''}
+              ${quiz ? `<span class="badge gold">${quiz.best}/${quiz.total}</span>` : ''}
+            </h3>
+            <div class="meta">${escapeHtml(m.summary)}</div>
+            <div class="tag-row"><span class="tag">${m.tag}</span></div>
+          </a>`;
+      }
+      sect.innerHTML = h;
+      sect.querySelectorAll('[data-action="open-module"]').forEach(el =>
+        el.addEventListener('click', () => route.go('module', el.dataset.id)));
+    }
+    function renderQuizSection(sect) {
+      sect.innerHTML = '<div id="quizSubview"></div>';
+      const quizSub = document.getElementById('quizSubview');
+      // Reuse the existing quiz-list renderer logic — point it at quizSub
+      renderQuizList(quizSub);
+    }
+    function renderGlossarySection(sect) {
+      sect.innerHTML = '<div id="glossarySubview"></div>';
+      renderGlossaryList(document.getElementById('glossarySubview'));
+    }
+
+    document.querySelectorAll('#learnFilter .chip-btn').forEach(b => b.addEventListener('click', () => {
+      document.querySelectorAll('#learnFilter .chip-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      renderSection(b.dataset.section);
+    }));
+    renderSection('modules');
+
+    view.querySelectorAll('[data-action="open-module"]').forEach(el =>
+      el.addEventListener('click', () => route.go('module', el.dataset.id)));
+    view.querySelectorAll('[data-action="mock"]').forEach(el =>
+      el.addEventListener('click', () => route.go('mock', null)));
+    view.querySelectorAll('[data-action="master"]').forEach(el =>
+      el.addEventListener('click', () => route.go('master', null)));
+    return; // new layout complete — skip the legacy module loop below
+    /* eslint-disable */ // legacy below kept temporarily for reference
     for (const m of D.modules) {
       const wasRead = (progress.read || {})[m.id];
       const quiz = (progress.quizzes || {})[m.id];
@@ -1103,6 +1148,165 @@
       }));
   }
 
+  // ---------- Welcome modal (shown once) ----------
+  function showWelcomeModal() {
+    const m = document.createElement('div');
+    m.className = 'modal-backdrop';
+    m.innerHTML = `<div class="modal">
+      <h2>👋 Welcome to NHBRC Trainer</h2>
+      <p>This is an <strong>independent study aid</strong> — not affiliated with NHBRC or SABS.
+      The official SANS 10400 standards (paid, from SABS) and the NHBRC Home Building Manual must
+      be obtained from their publishers and consulted before any plan submission.</p>
+      <p class="meta">You only see this once — full Terms &amp; Privacy live in the <strong>Me</strong> tab.</p>
+      <div class="actions"><button class="btn primary big" id="welcomeOk">Got it</button></div>
+    </div>`;
+    document.body.appendChild(m);
+    m.querySelector('#welcomeOk').addEventListener('click', () => {
+      localStorage.setItem('nhbrc.welcomeSeen.v1', '1');
+      m.remove();
+    });
+  }
+
+  // ---------- Quiz list renderer (used by Learn → Quizzes sub-section) ----------
+  function renderQuizList(target) {
+    const progress = store.load();
+    const pool = masterPool();
+    const hist = masterHistory();
+    const best = hist.reduce((m, h) => h.correct > m ? h.correct : m, 0);
+    const last = hist[0];
+    const seen = loadSeen();
+    const cyclePct = Math.min(100, Math.round(seen.size / Math.max(1, pool.length) * 100));
+
+    let html = `
+      <a class="card mock-card" data-action="mock">
+        <h3>🎓 Mock NHBRC Test <span class="badge gold">50 q · 60 min</span></h3>
+        <div class="meta">Exam-style: 50 random questions across every module, no answer feedback until the end. 70% pass mark.</div>
+        <div class="meta master-stats">${(loadMockHistory() || []).length ? `Attempts: <strong>${loadMockHistory().length}</strong> · Best: <strong>${Math.max(...loadMockHistory().map(h=>h.correct))}/50</strong>` : 'No attempts yet'}</div>
+      </a>
+
+      <a class="card master-card" data-action="master">
+        <h3>🏆 Master Quiz <span class="badge gold">${MASTER_SIZE} random</span></h3>
+        <div class="meta">${MASTER_SIZE} questions per attempt, prefers unseen until the pool of ${pool.length} is exhausted.</div>
+        <div class="progressbar"><span style="width:${cyclePct}%"></span></div>
+        <div class="meta">Cycle coverage: <strong>${seen.size}/${pool.length}</strong> seen this cycle</div>
+        <div class="meta master-stats">
+          ${hist.length ? `Attempts: <strong>${hist.length}</strong>` : 'No attempts yet'}
+          ${best ? ` · Best: <strong>${best}/${MASTER_SIZE}</strong>` : ''}
+          ${last ? ` · Last: <strong>${last.correct}/${last.total}</strong>` : ''}
+        </div>
+      </a>
+
+      <div class="section-title">Quizzes by module</div>`;
+    for (const q of D.quizzes) {
+      const m = D.modules.find(x => x.id === q.moduleId);
+      const r = (progress.quizzes || {})[q.moduleId];
+      html += `<a class="card" data-action="quiz" data-id="${q.moduleId}">
+        <h3><span style="font-size:22px">${m?.icon || '❓'}</span> ${escapeHtml(q.title || (m?.title || q.moduleId))}
+          ${r ? `<span class="badge gold">Best ${r.best}/${r.total}</span>` : ''}
+        </h3>
+        <div class="meta">${q.questions.length} questions${m?.tag ? ' · ' + m.tag : ''}</div>
+      </a>`;
+    }
+    target.innerHTML = html;
+    target.querySelectorAll('[data-action="quiz"]').forEach(el =>
+      el.addEventListener('click', () => route.go('quiz', el.dataset.id)));
+    target.querySelectorAll('[data-action="master"]').forEach(el =>
+      el.addEventListener('click', () => route.go('master', null)));
+    target.querySelectorAll('[data-action="mock"]').forEach(el =>
+      el.addEventListener('click', () => route.go('mock', null)));
+  }
+
+  // ---------- Glossary renderer ----------
+  function renderGlossaryList(target) {
+    const items = D.glossary.slice().sort((a, b) => a.term.localeCompare(b.term));
+    target.innerHTML = `<input type="search" class="search" id="gsearch" placeholder="Search ${items.length} key terms…" />
+      <div id="glist">${renderGlossary(items, '')}</div>`;
+    const input = target.querySelector('#gsearch');
+    input.addEventListener('input', () => {
+      const q = input.value.trim().toLowerCase();
+      target.querySelector('#glist').innerHTML = renderGlossary(items, q);
+    });
+  }
+
+  // ---------- Me / Account hub ----------
+  function viewMe() {
+    titleEl.textContent = 'Me';
+    backBtn.classList.add('hidden');
+    setActiveTab('me');
+    const u = A && A.currentUser();
+    const p = store.load();
+    const totalMods = D.modules.length;
+    const readMods = Object.keys(p.read || {}).length;
+    const quizzesTaken = Object.keys(p.quizzes || {}).length;
+    const allQuizzes = Object.values(p.quizzes || {});
+    const avgPct = quizzesTaken
+      ? Math.round(allQuizzes.reduce((s, q) => s + q.best / q.total, 0) / quizzesTaken * 100)
+      : 0;
+    const s = streakState();
+    const mockHist = loadMockHistory();
+    const masterHist = masterHistory();
+
+    view.innerHTML = `
+      <div class="me-hero">
+        <div class="me-avatar">${(u?.username || u?.email || '?').charAt(0).toUpperCase()}</div>
+        <div>
+          <div class="me-name">${escapeHtml(u?.username || u?.email || 'Guest')}</div>
+          <div class="meta">${escapeHtml(u?.role || 'user')} · since ${u?.createdAt ? escapeHtml(u.createdAt.slice(0,10)) : '—'}</div>
+        </div>
+      </div>
+
+      <div class="progress-stats">
+        <div class="stat"><div class="num">${readMods}/${totalMods}</div><div class="lbl">Modules read</div></div>
+        <div class="stat"><div class="num">${quizzesTaken}</div><div class="lbl">Quizzes taken</div></div>
+        <div class="stat"><div class="num">${avgPct}%</div><div class="lbl">Avg quiz best</div></div>
+        <div class="stat"><div class="num">🔥 ${s.streak || 0}</div><div class="lbl">Day streak (best ${s.best || 0})</div></div>
+      </div>
+
+      ${mockHist.length ? `
+        <div class="section-title">Mock NHBRC test history</div>
+        <div class="master-history">
+          ${mockHist.slice(0, 5).map(h => `<div class="hist-row">
+            <span class="hist-pct ${h.correct/h.total>=.7?'good':h.correct/h.total>=.5?'ok':'bad'}">${Math.round(h.correct/h.total*100)}%</span>
+            <span class="hist-score">${h.correct}/${h.total}</span>
+            <span class="hist-date">${escapeHtml(fmtTime(h.at))}</span>
+          </div>`).join('')}
+        </div>` : ''}
+
+      ${masterHist.length ? `
+        <div class="section-title">Master Quiz history</div>
+        <div class="master-history">
+          ${masterHist.slice(0, 5).map(h => `<div class="hist-row">
+            <span class="hist-pct ${h.correct/h.total>=.8?'good':h.correct/h.total>=.6?'ok':'bad'}">${Math.round(h.correct/h.total*100)}%</span>
+            <span class="hist-score">${h.correct}/${h.total}</span>
+            <span class="hist-date">${escapeHtml(fmtTime(h.at))}</span>
+          </div>`).join('')}
+        </div>` : ''}
+
+      <div class="section-title">Account</div>
+      ${A && A.isMaster() ? '<a class="card me-link" data-action="admin">👑 Admin panel <span class="source-chev">›</span></a>' : ''}
+      <a class="card me-link" data-action="about">ℹ️ About this guide <span class="source-chev">›</span></a>
+      <a class="card me-link" data-action="legal">📜 Terms &amp; sources <span class="source-chev">›</span></a>
+      <a class="card me-link" data-action="privacy">🔒 Privacy policy <span class="source-chev">›</span></a>
+      <a class="card me-link" data-action="reset">🧹 Reset progress &amp; quiz history</a>
+      <a class="card me-link" data-action="logout">🚪 Log out</a>
+    `;
+    view.querySelectorAll('[data-action="admin"]').forEach(el => el.addEventListener('click', () => route.go('admin')));
+    view.querySelectorAll('[data-action="about"]').forEach(el => el.addEventListener('click', () => route.go('about')));
+    view.querySelectorAll('[data-action="legal"]').forEach(el => el.addEventListener('click', () => route.go('legal')));
+    view.querySelectorAll('[data-action="privacy"]').forEach(el => el.addEventListener('click', () => route.go('privacy')));
+    view.querySelectorAll('[data-action="logout"]').forEach(el => el.addEventListener('click', () => {
+      if (confirm('Log out?')) { A.logout(); route.history = []; route.current = { name: 'landing', payload: null }; render(); }
+    }));
+    view.querySelectorAll('[data-action="reset"]').forEach(el => el.addEventListener('click', () => {
+      if (confirm('Clear all reading + quiz progress on this device? Your account is kept.')) {
+        ['nhbrc.progress.v1','nhbrc.master.v1','nhbrc.master.seen.v1','nhbrc.mock.v1','nhbrc.streak.v1','nhbrc.chat.v1']
+          .concat(Object.keys(localStorage).filter(k => k.startsWith('nhbrc.quiz.seen.')))
+          .forEach(k => localStorage.removeItem(k));
+        render();
+      }
+    }));
+  }
+
   // ---------- Daily streak ----------
   // Tracks consecutive days where the user opened the app — purely on-device.
   const STREAK_KEY = 'nhbrc.streak.v1';
@@ -1373,7 +1577,17 @@
     if (name === 'master') return 'quiz';
     if (name === 'mock') return 'quiz';
     if (name === 'tools') return 'tools';
-    if (name === 'privacy') return 'home';
+    if (name === 'privacy') return 'me';
+    if (name === 'me') return 'me';
+    if (name === 'about') return 'me';
+    if (name === 'legal') return 'me';
+    if (name === 'admin') return 'me';
+    if (name === 'progress') return 'me';
+    if (name === 'glossary') return 'home';
+    if (name === 'quizlist') return 'home';
+    if (name === 'quiz') return 'home';
+    if (name === 'master') return 'home';
+    if (name === 'mock') return 'home';
     return name;
   }
 
@@ -1402,6 +1616,7 @@
     if (name === 'mock')   return viewMockTest();
     if (name === 'tools')  return viewTools();
     if (name === 'privacy')return viewPrivacy();
+    if (name === 'me')     return viewMe();
     if (name === 'legal') return viewLegal();
     if (name === 'unlock') return viewUnlock(payload || 'general');
     return viewHome();
@@ -1414,16 +1629,17 @@
     const PAYSTACK_LINK = 'https://paystack.com/pay/nhbrc-trainer-lifetime'; // placeholder — replace with your real Paystack page slug
     view.innerHTML = `<article class="lesson legal-page">
       <div class="hero" style="background:linear-gradient(135deg,#7c4f00,#f5b800)">
-        <h2>🔓 Unlock the Master Quiz & all premium features</h2>
-        <p>Lifetime access. One payment. Updates included.</p>
+        <h2>🔓 Unlock the full trainer</h2>
+        <p>You're paying for the <strong>service</strong> — the curation, the calculators, the quiz engine, the offline-installable app. The underlying regulations are public; the experience is what's built.</p>
       </div>
       <ul class="feature-list">
-        <li>✅ All 17 study modules</li>
-        <li>✅ All 56 per-module quiz questions</li>
-        <li>🏆 Master Quiz with smart coverage tracking</li>
-        <li>📚 Library + curated outbound index</li>
-        <li>📜 Bundled public-domain SA legislation PDFs</li>
-        <li>📱 Installable PWA — works offline once installed</li>
+        <li>🎓 29 study modules covering every Part of SANS 10400 (A → XA)</li>
+        <li>🧠 250+ quiz questions · Master Quiz · 50-q Mock NHBRC Test simulator</li>
+        <li>🛠 13 on-site calculators (bricks, concrete, rebar, beams, cube tests…)</li>
+        <li>📚 Curated library of free SA legislation, offline + searchable</li>
+        <li>🤖 Local AI tutor (TF-IDF over the trainer's own corpus)</li>
+        <li>📱 Installable PWA — fully offline once installed</li>
+        <li>🔄 Updates included — content watch runs weekly</li>
       </ul>
       <div class="price-row">
         <div class="price"><span class="price-amount">R 199</span><span class="price-meta">founder lifetime · first 50 only</span></div>
@@ -1599,6 +1815,7 @@
     if (r === 'quiz') route.current = { name: 'quizlist', payload: null };
     else if (r === 'library') route.current = { name: 'library', payload: null };
     else if (r === 'tools')   route.current = { name: 'tools', payload: null };
+    else if (r === 'me')      route.current = { name: 'me', payload: null };
     else route.current = { name: r, payload: null };
     render();
   }));
