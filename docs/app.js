@@ -1950,17 +1950,14 @@
   }
   accountBtn.addEventListener('click', () => {
     if (!A || !A.isAuthenticated()) return;
-    const u = A.currentUser();
-    const isMaster = A.isMaster();
-    const choice = prompt(
-      `Signed in as ${u.username || u.email} (${u.role || 'user'}).\n\n` +
-      (isMaster ? 'Type "admin" to open the admin panel, "logout" to sign out, or close.' : 'Type "logout" to sign out, or close.'),
-      ''
-    );
-    if (!choice) return;
-    const c = choice.trim().toLowerCase();
-    if (c === 'logout') { A.logout(); route.history = []; route.current = { name: 'landing', payload: null }; render(); }
-    else if (c === 'admin' && isMaster) { route.go('admin'); }
+    // Admin + Account etc. live in the Me tab; the 👤 button is just a quick
+    // log-out trigger — no string typing.
+    if (confirm('Log out?')) {
+      A.logout();
+      route.history = [];
+      route.current = { name: 'landing', payload: null };
+      render();
+    }
   });
   if (A) A.subscribe(refreshChrome);
   refreshChrome();
