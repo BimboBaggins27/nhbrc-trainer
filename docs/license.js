@@ -84,8 +84,10 @@
   function isLicensed() {
     // Master account always bypasses the paywall.
     if (window.NHBRC_AUTH && window.NHBRC_AUTH.isMaster && window.NHBRC_AUTH.isMaster()) return true;
-    // No backend wired yet → app stays fully open for demo / development.
-    if (!API_BASE) return true;
+    // Otherwise: must have a non-expired stored license.
+    // (In demo / no-backend mode, the paste-code form still issues a
+    // local "demo-lifetime" license for any well-formed NHBRC- code,
+    // so testers can flow through. See verifyCode().)
     const lic = read();
     return !!lic && !isExpired(lic);
   }

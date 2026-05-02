@@ -795,6 +795,9 @@
   }
 
   function viewMockTest() {
+    if (window.NHBRC_LICENSE && !window.NHBRC_LICENSE.isLicensed()) {
+      return viewUnlock('mock');
+    }
     const pool = masterPool();
     const n = Math.min(MOCK_SIZE, pool.length);
     // Spread across modules: at least 1 from each module that has questions, then fill randomly.
