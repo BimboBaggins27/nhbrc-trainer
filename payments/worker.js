@@ -42,22 +42,42 @@ function jsonResp(obj, status = 200) {
   });
 }
 
-async function sendMagicLink(env, email, token) {
+async function sendActivationEmail(env, email, token, code) {
   const url = `${env.APP_URL}?activate=${encodeURIComponent(token)}`;
+  const fromAddr = env.FROM_EMAIL || 'NHBRC Trainer <onboarding@resend.dev>';
   const body = {
-    from: 'NHBRC Trainer <noreply@yourdomain.co.za>',
+    from: fromAddr,
     to: email,
-    subject: 'Your NHBRC Trainer activation link',
-    html: `<p>Thanks for buying NHBRC Trainer lifetime access.</p>
-           <p>Tap the link below on the device you want to install on.</p>
-           <p><a href="${url}">Activate NHBRC Trainer →</a></p>
-           <p style="font-size:12px;color:#666">If you didn't make this purchase, ignore this email.</p>`,
+    subject: 'Your NHBRC Trainer lifetime access',
+    html: `<div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;padding:20px;color:#222">
+      <h2 style="color:#0b6e3f;margin:0 0 8px">Welcome to NHBRC Trainer</h2>
+      <p>Thanks for your purchase. Your lifetime access is ready.</p>
+      <h3 style="margin:20px 0 6px">Option 1 — one-tap activation</h3>
+      <p>On the device you want to install on, tap:</p>
+      <p style="margin:14px 0"><a href="${url}" style="display:inline-block;background:#0b6e3f;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:600">Activate NHBRC Trainer →</a></p>
+      <h3 style="margin:24px 0 6px">Option 2 — paste this code</h3>
+      <p>If the link doesn't work, open the app, tap <strong>Unlock</strong>, and paste this code:</p>
+      <p style="margin:8px 0 14px;padding:14px;background:#f3f7f4;border-radius:8px;font-family:'JetBrains Mono','SF Mono',Consolas,monospace;font-size:18px;font-weight:700;letter-spacing:2px;text-align:center;color:#0b6e3f">${code}</p>
+      <p style="font-size:12px;color:#666;margin-top:30px">App URL: <a href="${env.APP_URL}">${env.APP_URL}</a><br>
+      If you didn't make this purchase, ignore this email — nothing further will happen.</p>
+    </div>`,
   };
   await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { 'authorization': `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
+}
+
+// Generate a human-friendly licence code: NHBRC-<YYYY>-<6 base32 chars>-<3>
+function makeCode() {
+  const buf = new Uint8Array(6);
+  crypto.getRandomValues(buf);
+  const ALPHA = 'ABCDEFGHIJKLMNPQRSTUVWXYZ23456789'; // skip 1/I/O/0
+  const part = (n) => Array.from({ length: n }, (_, i) =>
+    ALPHA[buf[i % buf.length] % ALPHA.length]).join('');
+  const yr = new Date().getFullYear();
+  return `NHBRC-${yr}-${part(6).slice(0,4)}-${part(6).slice(2,6)}`;
 }
 
 async function signLicense(env, lic) {
@@ -79,17 +99,28 @@ export default {
         if (event.event === 'charge.success') {
           const email = event.data.customer.email.toLowerCase();
           const amount = event.data.amount; // kobo/cents
-          // Mint license + activation token
+          // Mint licence: a UUID for internal use + a human-friendly code
+          // for paste-fallback. Both resolve to the same email/license.
           const key = crypto.randomUUID();
           const token = crypto.randomUUID();
+          const code = makeCode();
+          // Threshold in CENTS — Paystack ZAR amount is in cents.
+          // R 199 = 19 900 cents (founder), R 399 = 39 900 cents (list).
+          // R 59 monthly = 5 900 cents.
+          const lifetime = amount >= 19900;
           const lic = {
-            key, email, plan: amount >= 39900 ? 'lifetime' : 'monthly',
+            key, code, email,
+            plan: lifetime ? 'lifetime' : 'monthly',
+            paystackRef: event.data.reference || null,
+            amountCents: amount,
             activatedAt: new Date().toISOString(),
-            expiresAt: amount >= 39900 ? null : new Date(Date.now() + 31 * 86400 * 1000).toISOString(),
+            expiresAt: lifetime ? null : new Date(Date.now() + 31 * 86400 * 1000).toISOString(),
           };
           await env.LICENSES.put(`email:${email}`, JSON.stringify(lic));
-          await env.TOKENS.put(`token:${token}`, email, { expirationTtl: 86400 * 7 }); // 7-day activation window
-          await sendMagicLink(env, email, token);
+          await env.LICENSES.put(`code:${code}`, email);   // paste-fallback index
+          await env.LICENSES.put(`key:${key}`, email);     // refresh-by-key index
+          await env.TOKENS.put(`token:${token}`, email, { expirationTtl: 86400 * 7 });
+          await sendActivationEmail(env, email, token, code);
         }
         return jsonResp({ ok: true });
       } catch (e) {
@@ -109,11 +140,31 @@ export default {
       return jsonResp(lic);
     }
 
+    // Manual paste fallback — buyer received a license CODE in their email
+    // (alongside the magic link). They paste it here. We look it up by
+    // key → email index and return a signed license.
+    if (url.pathname === '/license/verify' && req.method === 'POST') {
+      const { code } = await req.json();
+      if (!code || typeof code !== 'string') return jsonResp({ error: 'no code' }, 400);
+      const normalized = code.trim().toUpperCase();
+      const email = await env.LICENSES.get(`code:${normalized}`);
+      if (!email) return jsonResp({ error: 'invalid or unknown licence code' }, 401);
+      const raw = await env.LICENSES.get(`email:${email}`);
+      if (!raw) return jsonResp({ error: 'no licence on file' }, 404);
+      const lic = await signLicense(env, JSON.parse(raw));
+      return jsonResp(lic);
+    }
+
     if (url.pathname === '/license/refresh' && req.method === 'POST') {
       const { key } = await req.json();
-      // For demo simplicity, just look up by key — in production index by key.
-      // We're storing by email; production hardening: maintain a keys→email index.
-      return jsonResp({ ok: true, refreshed: true });
+      // Maintain a keys→email index so refresh can resolve cleanly.
+      if (!key) return jsonResp({ error: 'no key' }, 400);
+      const email = await env.LICENSES.get(`key:${key}`);
+      if (!email) return jsonResp({ ok: false }, 404);
+      const raw = await env.LICENSES.get(`email:${email}`);
+      if (!raw) return jsonResp({ ok: false }, 404);
+      const lic = await signLicense(env, JSON.parse(raw));
+      return jsonResp(lic);
     }
 
     // Claude tutor proxy.  Body: { messages: [{role,content}], userId?: '<email|RU1>' }

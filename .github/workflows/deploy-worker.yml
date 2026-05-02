@@ -1,0 +1,36 @@
+name: Deploy payments worker
+
+# Deploys payments/worker.js to Cloudflare Workers on every push that
+# touches the payments/ directory. After the one-time setup (see
+# payments/SETUP-FREE.md) the only thing you do per change is `git push`.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'payments/**'
+      - '.github/workflows/deploy-worker.yml'
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy worker
+    # Optional — only runs when the secrets are set. Until you've put
+    # CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID in repo Secrets, this
+    # job is skipped. No errors, no annoying CI failures while you're
+    # still at the signup stage.
+    # Set repo variable WORKER_DEPLOY_ENABLED=true (Settings → Variables → Actions)
+    # once you've added CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID secrets.
+    # Until then, this job is skipped on every push so CI stays green.
+    if: ${{ vars.WORKER_DEPLOY_ENABLED == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: payments
+          # Wrangler reads wrangler.toml from the working directory.
+          # The KV namespaces and secrets you pre-create with `wrangler` once.

@@ -1733,14 +1733,37 @@
         <a class="btn primary big" href="${PAYSTACK_LINK}" target="_blank" rel="noopener">Buy lifetime — R 199</a>
       </div>
       <p class="meta" style="margin-top:6px">🚀 <strong>Founder pricing</strong>: R 199 once for the first 50 buyers (then R 399). One payment, all features, all future updates.</p>
-      <p class="meta" style="margin-top:14px">After payment you'll receive an email with a one-tap activation link.
-      Tap it on the same device you want to use the app on.</p>
-      <p class="meta">Already paid? Open your activation email and tap the unlock link again.</p>
-      <p class="meta">7-day refund window if you're not satisfied. Email refund requests via the Terms page.</p>
+      <p class="meta" style="margin-top:14px">After payment you'll get an email with two ways to unlock — a one-tap activation link, and a 14-character licence code below in case you need to type it.</p>
+
+      <h3 style="margin-top:22px">Already paid? Paste your licence code</h3>
+      <form id="actForm" class="auth-form" style="margin-top:8px">
+        <label>Licence code<input id="actCode" type="text" autocomplete="off" placeholder="NHBRC-2026-XXXX-XXXX" /></label>
+        <div id="actErr" class="auth-err"></div>
+        <button class="btn primary" type="submit">Unlock</button>
+      </form>
+      <p class="meta" style="margin-top:8px">7-day refund window if you're not satisfied. Email refund requests via the Terms page.</p>
       <div class="actions"><button class="btn secondary" data-action="back">Back</button></div>
     </article>`;
     view.querySelectorAll('[data-action="back"]').forEach(el =>
       el.addEventListener('click', () => route.back()));
+    const form = document.getElementById('actForm');
+    if (form) {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const code = document.getElementById('actCode').value;
+        const err = document.getElementById('actErr');
+        err.textContent = '';
+        const r = await window.NHBRC_LICENSE.verifyCode(code);
+        if (r.ok) {
+          err.style.color = '#6fdc9a';
+          err.textContent = '✅ Unlocked. Reloading…';
+          setTimeout(() => location.reload(), 800);
+        } else {
+          err.style.color = '#ff9b87';
+          err.textContent = r.error || 'Activation failed.';
+        }
+      });
+    }
   }
 
   function viewLegal() {

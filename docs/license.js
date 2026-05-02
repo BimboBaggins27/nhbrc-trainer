@@ -41,6 +41,32 @@
     return { ok: true, license: lic };
   }
 
+  async function verifyCode(code) {
+    if (!code) return { ok: false, error: 'Enter your licence code.' };
+    if (!API_BASE) {
+      // Demo mode: any well-formed NHBRC-* code unlocks for testing
+      if (/^NHBRC-/i.test(code.trim())) {
+        const fake = { plan: 'demo-lifetime', email: 'demo@local', code: code.trim(), activatedAt: new Date().toISOString() };
+        write(fake);
+        return { ok: true, license: fake };
+      }
+      return { ok: false, error: 'Demo mode — paste a code starting NHBRC- to test the flow.' };
+    }
+    const r = await fetch(`${API_BASE}/license/verify`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ code: code.trim().toUpperCase() }),
+    });
+    if (!r.ok) {
+      let err = 'Invalid licence code.';
+      try { const j = await r.json(); err = j.error || err; } catch {}
+      return { ok: false, error: err };
+    }
+    const lic = await r.json();
+    write(lic);
+    return { ok: true, license: lic };
+  }
+
   async function refresh() {
     const lic = read();
     if (!lic || !API_BASE) return lic;
@@ -77,6 +103,6 @@
   }
 
   window.NHBRC_LICENSE = {
-    isLicensed, read, clear, activate, refresh, hasBackend: !!API_BASE,
+    isLicensed, read, clear, activate, refresh, verifyCode, hasBackend: !!API_BASE,
   };
 })();
