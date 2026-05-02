@@ -281,20 +281,28 @@ window.NHBRC_CALCULATORS = (function () {
     return `<label class="calc-field"><span>${label}</span>${html}</label>`;
   }
 
-  const TOOLS = [
-    { id:'brick',    label:'🧱 Bricks & mortar' },
-    { id:'plaster',  label:'🧴 Plaster' },
-    { id:'concrete', label:'🥌 Concrete mix' },
-    { id:'strip',    label:'🏗 Strip footing' },
-    { id:'rebar',    label:'🪵 Rebar' },
-    { id:'tile',     label:'🟫 Tiling' },
-    { id:'paint',    label:'🖌 Paint' },
-    { id:'excav',    label:'🚜 Excavation' },
-    { id:'roof',     label:'🏠 Roofing' },
-    { id:'beam',     label:'📏 Beam / lintel' },
-    { id:'cube',     label:'🧊 Cube test' },
-    { id:'site',     label:'🌍 Site class' },
-    { id:'units',    label:'🔁 Units' },
+  const TOOL_GROUPS = [
+    { group: 'Materials',   tools: [
+      { id:'brick',    label:'🧱 Bricks & mortar' },
+      { id:'plaster',  label:'🧴 Plaster' },
+      { id:'concrete', label:'🥌 Concrete mix' },
+      { id:'tile',     label:'🟫 Tiling' },
+      { id:'paint',    label:'🖌 Paint' },
+      { id:'roof',     label:'🏠 Roofing' },
+    ]},
+    { group: 'Structural',  tools: [
+      { id:'strip',    label:'🏗 Strip footing' },
+      { id:'rebar',    label:'🪵 Rebar' },
+      { id:'beam',     label:'📏 Beam / lintel' },
+    ]},
+    { group: 'Earthworks & QC', tools: [
+      { id:'excav',    label:'🚜 Excavation' },
+      { id:'cube',     label:'🧊 Cube test' },
+      { id:'site',     label:'🌍 Site class' },
+    ]},
+    { group: 'Lookup',      tools: [
+      { id:'units',    label:'🔁 Units' },
+    ]},
   ];
 
   function view(escapeHtml, container) {
@@ -303,16 +311,18 @@ window.NHBRC_CALCULATORS = (function () {
       container.innerHTML = `
         <div class="hero" style="background:linear-gradient(135deg,#0e8a4f,#0b6e3f)">
           <h2>🛠 On-site toolkit</h2>
-          <p>Quantities, mixes, structural sanity-checks, QC stats — built for the site office.</p>
+          <p>${TOOL_GROUPS.reduce((n, g) => n + g.tools.length, 0)} calculators · grouped for the site office.</p>
         </div>
-        <div class="filter-row" id="calcTabs">
-          ${TOOLS.map(t => `<button class="chip-btn ${active===t.id?'active':''}" data-tab="${t.id}">${t.label}</button>`).join('')}
-        </div>
+        ${TOOL_GROUPS.map(g => `
+          <div class="tool-group-label">${g.group}</div>
+          <div class="filter-row tool-group">
+            ${g.tools.map(t => `<button class="chip-btn ${active===t.id?'active':''}" data-tab="${t.id}">${t.label}</button>`).join('')}
+          </div>`).join('')}
         <div id="calcBody"></div>
         <p class="meta" style="margin-top:14px">Quick-decision tools — verify against your actual specification + the relevant SANS 10400 part. Not a substitute for an engineer's design where rational sign-off is required.</p>
       `;
-      container.querySelectorAll('#calcTabs .chip-btn').forEach(b =>
-        b.addEventListener('click', () => { active = b.dataset.tab; render(); }));
+      container.querySelectorAll('.chip-btn').forEach(b =>
+        b.addEventListener('click', () => { active = b.dataset.tab; render(); container.querySelector('#calcBody').scrollIntoView({behavior:'smooth',block:'start'}); }));
       const body = container.querySelector('#calcBody');
       const fn = ({
         brick: brickView, plaster: plasterView, concrete: concreteView,

@@ -739,6 +739,48 @@ figcaption {
 .ss-item strong { font-size: 18px; color: #6fdc9a; }
 .ss-lbl { color: var(--muted); font-size: 11px; }
 
+/* Compact one-line stats */
+.status-line {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--muted);
+  padding: 8px 4px 4px;
+}
+.status-line strong { color: #6fdc9a; font-weight: 700; }
+.status-line .dot { opacity: .4; }
+
+/* Library expandable sections */
+.lib-details {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 8px 0;
+}
+.lib-details summary {
+  list-style: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  user-select: none;
+  display: flex; gap: 8px; align-items: center;
+}
+.lib-details summary::after { content: "▾"; margin-left: auto; opacity: .5; transition: transform .2s; }
+.lib-details[open] summary::after { transform: rotate(180deg); }
+
+/* Tools — grouped calculator chips */
+.tool-group-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--muted);
+  margin: 14px 0 4px;
+  padding-left: 4px;
+  font-weight: 700;
+}
+.tool-group { margin: 0 0 6px; }
+
 .quick-actions {
   display: grid;
   gap: 8px;

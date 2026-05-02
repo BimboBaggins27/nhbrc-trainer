@@ -128,23 +128,21 @@
     if (!localStorage.getItem('nhbrc.welcomeSeen.v1')) showWelcomeModal();
 
     let html = `
-      <div class="status-strip">
-        <span class="ss-item"><strong>${readMods}/${totalMods}</strong><br><span class="ss-lbl">modules</span></span>
-        <span class="ss-item"><strong>🔥 ${s.streak || 0}</strong><br><span class="ss-lbl">day streak</span></span>
-        <span class="ss-item"><strong>${bestMock}/50</strong><br><span class="ss-lbl">best mock</span></span>
+      <div class="status-line">
+        <span><strong>${readMods}</strong>/${totalMods} modules</span>
+        <span class="dot">·</span>
+        <span><strong>🔥 ${s.streak || 0}</strong> ${s.streak===1?'day':'days'}</span>
+        <span class="dot">·</span>
+        <span><strong>${bestMock}</strong>/50 best mock</span>
       </div>
 
-      <div class="quick-actions">
-        ${continueMod ? `<a class="qa-card primary" data-action="open-module" data-id="${continueMod.id}">
-          <div class="qa-icon">▶</div>
-          <div class="qa-text"><div class="qa-eyebrow">${lastRead ? 'Continue' : 'Start with'}</div><div class="qa-title">${continueMod.icon} ${escapeHtml(continueMod.title)}</div></div>
-        </a>` : ''}
-        <a class="qa-card" data-action="mock"><div class="qa-icon">🎓</div><div class="qa-text"><div class="qa-eyebrow">Exam prep</div><div class="qa-title">Mock NHBRC test</div></div></a>
-        <a class="qa-card" data-action="master"><div class="qa-icon">🏆</div><div class="qa-text"><div class="qa-eyebrow">25 random</div><div class="qa-title">Master Quiz</div></div></a>
-      </div>
+      ${continueMod ? `<a class="qa-card primary" data-action="open-module" data-id="${continueMod.id}">
+        <div class="qa-icon">▶</div>
+        <div class="qa-text"><div class="qa-eyebrow">${lastRead ? 'Continue' : 'Start with'}</div><div class="qa-title">${continueMod.icon} ${escapeHtml(continueMod.title)}</div></div>
+      </a>` : ''}
 
       <div class="filter-row" id="learnFilter">
-        <button class="chip-btn active" data-section="modules">📘 Modules (${D.modules.length})</button>
+        <button class="chip-btn active" data-section="modules">📘 Modules · ${D.modules.length}</button>
         <button class="chip-btn" data-section="quizzes">❓ Quizzes</button>
         <button class="chip-btn" data-section="glossary">🔤 Glossary</button>
       </div>
@@ -411,41 +409,44 @@
 
     let html = `<div class="hero" style="background:linear-gradient(135deg,#1a8a4a,#0b6e3f)">
       <h2>📚 Library</h2>
-      <p>Curated index — bundled public-domain legislation + links out to authoritative sources.</p>
+      <p>Bundled legislation + curated outbound index.</p>
     </div>
 
-    <div class="section-title">📕 Bundled (public-domain legislation)</div>
+    <div class="section-title">📕 Bundled — public-domain legislation</div>
     <div class="pdf-list">
       ${L.pdfs.map(p => `<a class="card pdf-card" href="${escapeHtml(p.file)}" target="_blank" rel="noopener">
         <div class="pdf-icon">📕</div>
         <div class="pdf-body">
           <div class="pdf-title">${escapeHtml(p.title)}</div>
-          <div class="meta">${escapeHtml(p.description)}</div>
-          <div class="meta">${p.sizeMb} MB · ${escapeHtml(p.source)} · public domain</div>
+          <div class="meta">${p.sizeMb} MB · ${escapeHtml(p.source)}</div>
         </div>
       </a>`).join('')}
     </div>
 
-    <div class="section-title">🔗 Buy / get from official source</div>
-    <div class="pdf-list">
-      ${(L.externalDocs || []).map(d => `<a class="card pdf-card ext-card" href="${escapeHtml(d.url)}" target="_blank" rel="noopener">
-        <div class="pdf-icon">↗</div>
-        <div class="pdf-body">
-          <div class="pdf-title">${escapeHtml(d.title)}</div>
-          <div class="meta">${escapeHtml(d.note)}</div>
-          <div class="meta">Publisher: ${escapeHtml(d.publisher)}</div>
-        </div>
-      </a>`).join('')}
-    </div>
+    <details class="lib-details">
+      <summary>🔗 Buy / get from official source · ${(L.externalDocs || []).length}</summary>
+      <div class="pdf-list" style="margin-top:8px">
+        ${(L.externalDocs || []).map(d => `<a class="card pdf-card ext-card" href="${escapeHtml(d.url)}" target="_blank" rel="noopener">
+          <div class="pdf-icon">↗</div>
+          <div class="pdf-body">
+            <div class="pdf-title">${escapeHtml(d.title)}</div>
+            <div class="meta">${escapeHtml(d.note)}</div>
+          </div>
+        </a>`).join('')}
+      </div>
+    </details>
 
-    <div class="section-title">🗞️ Curated articles <span class="meta-inline">(${L.articleCount} — open on sans10400.co.za)</span></div>
-    <input type="search" class="search" id="libsearch" placeholder="Search by title or category…" />
-    <div class="filter-row" id="libfilters">
-      <button class="chip-btn active" data-cat="">All</button>
-      ${topCats.map(([c,n]) => `<button class="chip-btn" data-cat="${escapeHtml(c)}">${escapeHtml(c)} <span class="chip-num">${n}</span></button>`).join('')}
-    </div>
-    <div class="meta" style="margin:6px 0 4px">${escapeHtml(L.articlesNote || '')}</div>
-    <div id="liblist"></div>`;
+    <details class="lib-details">
+      <summary>🗞️ Curated articles · ${L.articleCount}</summary>
+      <div style="margin-top:8px">
+        <input type="search" class="search" id="libsearch" placeholder="Search by title or category…" />
+        <div class="filter-row" id="libfilters">
+          <button class="chip-btn active" data-cat="">All</button>
+          ${topCats.slice(0, 8).map(([c,n]) => `<button class="chip-btn" data-cat="${escapeHtml(c)}">${escapeHtml(c)} <span class="chip-num">${n}</span></button>`).join('')}
+        </div>
+        <div id="liblist"></div>
+      </div>
+    </details>`;
     view.innerHTML = html;
 
     const listEl = document.getElementById('liblist');
