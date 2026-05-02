@@ -1300,6 +1300,7 @@
       <a class="card me-link" data-action="legal">📜 Terms &amp; sources <span class="source-chev">›</span></a>
       <a class="card me-link" data-action="privacy">🔒 Privacy policy <span class="source-chev">›</span></a>
       <a class="card me-link" data-action="reset">🧹 Reset progress &amp; quiz history</a>
+      <a class="card me-link" data-action="hard-refresh">🔄 Force refresh — clear cache + reload</a>
       <a class="card me-link" data-action="logout">🚪 Log out</a>
     `;
     view.querySelectorAll('[data-action="admin"]').forEach(el => el.addEventListener('click', () => route.go('admin')));
@@ -1316,6 +1317,20 @@
           .forEach(k => localStorage.removeItem(k));
         render();
       }
+    }));
+    view.querySelectorAll('[data-action="hard-refresh"]').forEach(el => el.addEventListener('click', async () => {
+      if (!confirm('Clear all caches + service worker, then reload? Your account stays.')) return;
+      try {
+        if ('serviceWorker' in navigator) {
+          const rs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(rs.map(r => r.unregister()));
+        }
+        if ('caches' in window) {
+          const ks = await caches.keys();
+          await Promise.all(ks.map(k => caches.delete(k)));
+        }
+      } catch {}
+      location.href = location.origin + location.pathname + '?cb=' + Date.now();
     }));
   }
 
@@ -1417,12 +1432,40 @@
     let active = 'foundation';
     function render() {
       body.innerHTML = `
-        <p class="meta">Tick off each item, then generate a signed PDF for your site file.</p>
+        <p class="meta">Tick off each item per stage. Generate one PDF per stage, OR fill all stages then export the combined Project Inspection File at the bottom.</p>
         <div class="filter-row">
           ${Object.entries(stages).map(([k, s]) => `<button class="chip-btn ${active===k?'active':''}" data-k="${k}">${escapeHtml(s.title)}</button>`).join('')}
         </div>
-        <div id="chkBody"></div>`;
+        <div id="chkBody"></div>
+
+        <details class="lib-details" style="margin-top:14px">
+          <summary>📋 Combined Project Inspection File — all 6 stages, one PDF</summary>
+          <div style="margin-top:8px">
+            <p class="meta">Fills the heading on the cover page. Each stage prints on its own page with the ticks you've entered above. One file per project; print fresh for each new project.</p>
+            <div class="calc-form">
+              <label class="calc-field"><span>Project name</span><input id="prjName" type="text" placeholder="e.g. 12 Acacia Lane"/></label>
+              <label class="calc-field"><span>Erf / stand</span><input id="prjErf" type="text"/></label>
+              <label class="calc-field"><span>Owner</span><input id="prjOwner" type="text"/></label>
+              <label class="calc-field"><span>Site address</span><input id="prjAddress" type="text"/></label>
+              <label class="calc-field"><span>Home builder</span><input id="prjBuilder" type="text"/></label>
+              <label class="calc-field"><span>NHBRC reg no</span><input id="prjNhbrc" type="text"/></label>
+              <label class="calc-field"><span>Approved plan no</span><input id="prjPlan" type="text"/></label>
+            </div>
+            <div class="actions"><button class="btn primary big" id="prjGen">📄 Generate Combined Project File (PDF)</button></div>
+          </div>
+        </details>`;
       body.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => { active = b.dataset.k; render(); }));
+      body.querySelector('#prjGen').addEventListener('click', () => {
+        window.NHBRC_FORMS.generateMasterChecklist({
+          projectName: body.querySelector('#prjName').value,
+          erf: body.querySelector('#prjErf').value,
+          owner: body.querySelector('#prjOwner').value,
+          address: body.querySelector('#prjAddress').value,
+          builder: body.querySelector('#prjBuilder').value,
+          nhbrcNo: body.querySelector('#prjNhbrc').value,
+          planNo: body.querySelector('#prjPlan').value,
+        });
+      });
       window.NHBRC_FORMS.checklistView(active, body.querySelector('#chkBody'), escapeHtml);
     }
     render();

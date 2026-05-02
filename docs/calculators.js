@@ -263,6 +263,141 @@ window.NHBRC_CALCULATORS = (function () {
     return { siteClass: 'unknown', recommendation: 'Need more info — at minimum hand-auger sample + slope check.' };
   }
 
+  // ---------- Tool: Stairs geometry ----------
+  function calcStairs({ totalRise_mm, riser_mm = 175, going_mm = 250 }) {
+    if (!totalRise_mm) return { error: 'Set total rise.' };
+    const risers = Math.ceil(totalRise_mm / riser_mm);
+    const actualRiser = +(totalRise_mm / risers).toFixed(1);
+    const goings = risers - 1;
+    const totalRun = goings * going_mm;
+    const slope = +Math.atan(actualRiser / going_mm * Math.PI / 180 * 180 / Math.PI).toFixed(1); // approximate
+    const angle = +(Math.atan2(actualRiser, going_mm) * 180 / Math.PI).toFixed(1);
+    const ergo = (2 * actualRiser + going_mm); // 500-700 ideal
+    return {
+      risers, actualRiser_mm: actualRiser, goings,
+      totalRun_mm: totalRun,
+      angle_deg: angle,
+      ergonomic_2RG: +ergo.toFixed(0),
+      ergonomicOK: ergo >= 500 && ergo <= 700,
+      compliesPartM: actualRiser <= 200 && going_mm >= 250,
+    };
+  }
+
+  // ---------- Tool: Drywall (gypsum board) ----------
+  function calcDrywall({ wallArea_m2, ceilingArea_m2 = 0, boardSize = '1.2x2.4', wastePct = 10 }) {
+    const totalArea = wallArea_m2 + ceilingArea_m2;
+    const sizes = { '1.2x2.4': 2.88, '1.2x3.0': 3.6, '0.9x2.4': 2.16 };
+    const boardArea = sizes[boardSize] || 2.88;
+    const boards = Math.ceil(totalArea / boardArea * (1 + wastePct / 100));
+    // Screws ~25 per board for ceiling, ~20 for wall
+    const screws = boards * 22;
+    // Joint compound ~1 kg per m² for taping + 2 coats
+    const compound_kg = +(totalArea * 1).toFixed(1);
+    // Tape: ~3 m of joint per m² (rough)
+    const tape_m = Math.ceil(totalArea * 3);
+    return { totalArea, boards, screws, compound_kg, tape_m, boardSize };
+  }
+
+  // ---------- Tool: Insulation R-value selector ----------
+  function calcInsulation({ zone = 3, element = 'roof' }) {
+    // Target R-values per SANS 10400-XA (typical residential)
+    const targets = {
+      roof:      { 1: 3.7, 2: 3.7, 3: 3.7, 4: 3.7, 5: 3.7, 6: 3.5 },
+      ceiling:   { 1: 3.0, 2: 3.0, 3: 3.0, 4: 3.0, 5: 3.0, 6: 2.8 },
+      wall_ext:  { 1: 1.9, 2: 1.9, 3: 1.9, 4: 1.9, 5: 1.9, 6: 1.6 },
+      floor:     { 1: 1.0, 2: 1.0, 3: 1.0, 4: 1.0, 5: 1.0, 6: 1.0 },
+    };
+    const R = targets[element]?.[zone];
+    if (!R) return { error: 'Pick zone (1-6) and element.' };
+    // Common materials' thermal conductivity λ (W/m·K) → thickness mm = R × λ × 1000
+    const products = [
+      { name: 'Fibreglass batt (Aerolite, Isover) λ=0.040', lambda: 0.040 },
+      { name: 'Mineral wool λ=0.038', lambda: 0.038 },
+      { name: 'Polyester batt (THINKPINK) λ=0.044', lambda: 0.044 },
+      { name: 'EPS rigid foam λ=0.038', lambda: 0.038 },
+      { name: 'Polyurethane spray foam λ=0.024', lambda: 0.024 },
+      { name: 'Cellulose loose-fill λ=0.040', lambda: 0.040 },
+    ].map(p => ({ ...p, thickness_mm: Math.ceil(R * p.lambda * 1000) }));
+    return { zone, element, targetR: R, products };
+  }
+
+  // ---------- Tool: Pipe flow / drainage capacity (Manning's) ----------
+  function calcPipeFlow({ diameter_mm, slope_pct = 1, n = 0.013 }) {
+    if (!diameter_mm || !slope_pct) return { error: 'Set diameter + slope.' };
+    const d = diameter_mm / 1000;            // m
+    const A = Math.PI * (d / 2) ** 2;        // full-pipe area, m²
+    const P = Math.PI * d;                   // wetted perimeter (full bore)
+    const Rh = A / P;                        // hydraulic radius
+    const S = slope_pct / 100;
+    const V = (1 / n) * Math.pow(Rh, 2 / 3) * Math.sqrt(S);  // m/s
+    const Q = V * A;                         // m³/s
+    return {
+      area_m2: +A.toFixed(4),
+      velocity_ms: +V.toFixed(2),
+      flow_Lps: +(Q * 1000).toFixed(1),
+      slope_one_in: +(100 / slope_pct).toFixed(0),
+      capacity_note: V >= 0.6 ? '✅ Self-cleansing (≥ 0.6 m/s)' : '⚠️ Below self-cleansing velocity — risk of solids settling',
+    };
+  }
+
+  // ---------- Tool: Column / round-pier volume ----------
+  function calcColumn({ shape = 'square', width_m = 0.3, depth_m = 0.3, diameter_m = 0.3, height_m = 3, count = 1, mpa = '25' }) {
+    const each = shape === 'circle'
+      ? Math.PI * (diameter_m / 2) ** 2 * height_m
+      : width_m * depth_m * height_m;
+    const total = each * count * 1.05; // 5% waste
+    const m = CONCRETE_MIX[String(mpa)];
+    if (!m) return { error: 'Pick a strength.' };
+    return {
+      eachVolume_m3: +each.toFixed(3),
+      totalVolume_m3: +total.toFixed(3),
+      cement_bags: bagsCeil(total * m.cement_kg),
+      sand_m3: +(total * m.sand_m3).toFixed(2),
+      stone_m3: +(total * m.stone_m3).toFixed(2),
+      water_L: +(total * m.water_L).toFixed(0),
+    };
+  }
+
+  // ---------- Tool: Wallpaper / cladding rolls ----------
+  function calcWallpaper({ wall_w_m, wall_h_m, roll_w_mm = 530, roll_l_m = 10, pattern_repeat_mm = 0, wastePct = 10 }) {
+    if (!wall_w_m || !wall_h_m) return { error: 'Set wall dimensions.' };
+    const stripsPerRoll = Math.floor((roll_l_m * 1000) / (wall_h_m * 1000 + pattern_repeat_mm));
+    const stripsNeeded = Math.ceil((wall_w_m * 1000) / roll_w_mm);
+    const rolls = Math.ceil(stripsNeeded / stripsPerRoll * (1 + wastePct / 100));
+    return { stripsPerRoll, stripsNeeded, rolls };
+  }
+
+  // ---------- Tool: Lumber / framing ----------
+  function calcFraming({ wall_length_m, wall_height_m = 2.7, stud_centres_mm = 600, plate_layers = 2 }) {
+    if (!wall_length_m) return { error: 'Set wall length.' };
+    const studs = Math.ceil(wall_length_m * 1000 / stud_centres_mm) + 1; // + end stud
+    const plates_m = wall_length_m * plate_layers + wall_length_m; // top + bottom + double-top
+    const studLen = wall_height_m;
+    const total_m = studs * studLen + plates_m;
+    return {
+      studs, stud_length_m: +studLen.toFixed(2),
+      plates_m: +plates_m.toFixed(1),
+      total_m: +total_m.toFixed(1),
+    };
+  }
+
+  // ---------- Tool: Deck / floor joist sizing ----------
+  function calcDeck({ deck_w_m, deck_l_m, joist_centres_mm = 400, board_w_mm = 140, board_gap_mm = 5 }) {
+    if (!deck_w_m || !deck_l_m) return { error: 'Set deck dimensions.' };
+    const area = deck_w_m * deck_l_m;
+    const joistCount = Math.ceil((deck_w_m * 1000) / joist_centres_mm) + 1;
+    const joistLen_m = deck_l_m;
+    const boardsAcross = Math.ceil((deck_w_m * 1000) / (board_w_mm + board_gap_mm));
+    const boardLen_m = deck_l_m;
+    return {
+      area_m2: +area.toFixed(2),
+      joists: joistCount,
+      joist_total_m: +(joistCount * joistLen_m).toFixed(1),
+      decking_boards: boardsAcross,
+      decking_total_m: +(boardsAcross * boardLen_m).toFixed(1),
+    };
+  }
+
   // ---------- Tool: Unit converter ----------
   function convertUnit(value, from, to) {
     const factors = {
@@ -286,14 +421,24 @@ window.NHBRC_CALCULATORS = (function () {
       { id:'brick',    label:'🧱 Bricks & mortar' },
       { id:'plaster',  label:'🧴 Plaster' },
       { id:'concrete', label:'🥌 Concrete mix' },
+      { id:'column',   label:'🏛 Columns / piers' },
       { id:'tile',     label:'🟫 Tiling' },
+      { id:'drywall',  label:'🧱 Drywall' },
       { id:'paint',    label:'🖌 Paint' },
+      { id:'wallpaper',label:'🎨 Wallpaper' },
       { id:'roof',     label:'🏠 Roofing' },
     ]},
     { group: 'Structural',  tools: [
       { id:'strip',    label:'🏗 Strip footing' },
       { id:'rebar',    label:'🪵 Rebar' },
       { id:'beam',     label:'📏 Beam / lintel' },
+      { id:'framing',  label:'🪚 Framing' },
+      { id:'deck',     label:'🛠 Deck / joists' },
+      { id:'stairs',   label:'🪜 Stairs geometry' },
+    ]},
+    { group: 'Building services', tools: [
+      { id:'pipe',     label:'🚰 Pipe flow' },
+      { id:'insul',    label:'❄ Insulation R-value' },
     ]},
     { group: 'Earthworks & QC', tools: [
       { id:'excav',    label:'🚜 Excavation' },
@@ -329,6 +474,9 @@ window.NHBRC_CALCULATORS = (function () {
         strip: stripView, rebar: rebarView, tile: tileView, paint: paintView,
         excav: excavView, roof: roofView, beam: beamView,
         cube: cubeView, site: siteView, units: unitsView,
+        stairs: stairsView, drywall: drywallView, insul: insulView,
+        pipe: pipeView, column: columnView, wallpaper: wallpaperView,
+        framing: framingView, deck: deckView,
       })[active] || brickView;
       fn(escapeHtml, body);
     }
@@ -696,10 +844,226 @@ window.NHBRC_CALCULATORS = (function () {
     refresh();
   }
 
+  // ---------- New tool views ----------
+
+  function stairsView(escapeHtml, body) {
+    body.innerHTML = `
+      <div class="calc-form">
+        ${field('Total rise (mm) — floor to floor', '<input id="stR" type="number" step="10" min="0" value="2700">')}
+        ${field('Riser height target (mm)', '<input id="stRiser" type="number" step="5" min="100" max="220" value="175">')}
+        ${field('Going (tread depth, mm)', '<input id="stGoing" type="number" step="5" min="200" max="350" value="250">')}
+      </div><div id="stOut" class="calc-out"></div>`;
+    const compute = () => {
+      const r = calcStairs({
+        totalRise_mm: +body.querySelector('#stR').value,
+        riser_mm: +body.querySelector('#stRiser').value,
+        going_mm: +body.querySelector('#stGoing').value,
+      });
+      if (r.error) return body.querySelector('#stOut').innerHTML = `<div class="empty">${escapeHtml(r.error)}</div>`;
+      body.querySelector('#stOut').innerHTML = `
+        <div class="calc-row hilite"><span>Risers / treads (going count)</span><strong>${r.risers} / ${r.goings}</strong></div>
+        <div class="calc-row"><span>Actual riser (recalculated)</span><strong>${r.actualRiser_mm} mm</strong></div>
+        <div class="calc-row"><span>Total run (horizontal)</span><strong>${r.totalRun_mm} mm</strong></div>
+        <div class="calc-row"><span>Pitch angle</span><strong>${r.angle_deg}°</strong></div>
+        <div class="calc-row"><span>2R + G ergonomics</span><strong>${r.ergonomic_2RG} mm ${r.ergonomicOK?'✅':'⚠️ outside 500–700'}</strong></div>
+        <div class="calc-row"><span>Part M compliance</span><strong>${r.compliesPartM?'✅ riser ≤ 200, going ≥ 250':'⚠️ check riser / going'}</strong></div>`;
+    };
+    body.querySelectorAll('input').forEach(el => el.addEventListener('input', compute));
+    compute();
+  }
+
+  function drywallView(escapeHtml, body) {
+    body.innerHTML = `
+      <div class="calc-form">
+        ${field('Wall area (m²)', '<input id="dwW" type="number" step="1" min="0" value="60">')}
+        ${field('Ceiling area (m²) — optional', '<input id="dwC" type="number" step="1" min="0" value="20">')}
+        ${field('Board size', '<select id="dwS"><option value="1.2x2.4" selected>1200 × 2400 mm (2.88 m²)</option><option value="1.2x3.0">1200 × 3000 mm (3.6 m²)</option><option value="0.9x2.4">900 × 2400 mm (2.16 m²)</option></select>')}
+        ${field('Waste %', '<input id="dwWa" type="number" step="1" min="0" value="10">')}
+      </div><div id="dwOut" class="calc-out"></div>`;
+    const compute = () => {
+      const r = calcDrywall({
+        wallArea_m2: +body.querySelector('#dwW').value,
+        ceilingArea_m2: +body.querySelector('#dwC').value,
+        boardSize: body.querySelector('#dwS').value,
+        wastePct: +body.querySelector('#dwWa').value,
+      });
+      body.querySelector('#dwOut').innerHTML = `
+        <div class="calc-row"><span>Total area</span><strong>${r.totalArea} m²</strong></div>
+        <div class="calc-row hilite"><span>Boards needed</span><strong>${r.boards}</strong></div>
+        <div class="calc-row"><span>Drywall screws (≈ 22/board)</span><strong>${r.screws.toLocaleString()}</strong></div>
+        <div class="calc-row"><span>Joint compound</span><strong>${r.compound_kg} kg</strong></div>
+        <div class="calc-row"><span>Joint tape</span><strong>${r.tape_m} m</strong></div>`;
+    };
+    body.querySelectorAll('input, select').forEach(el => el.addEventListener('input', compute));
+    compute();
+  }
+
+  function insulView(escapeHtml, body) {
+    body.innerHTML = `
+      <div class="calc-form">
+        ${field('SANS 10400-XA climate zone (1–6)', '<select id="inZ"><option value="1">1 — Cape coast</option><option value="2">2 — Coastal subtropical</option><option value="3" selected>3 — Highveld + Pretoria</option><option value="4">4 — Hot interior</option><option value="5">5 — Cold interior (Lesotho border)</option><option value="6">6 — Arid</option></select>')}
+        ${field('Element', '<select id="inE"><option value="roof" selected>Roof</option><option value="ceiling">Ceiling</option><option value="wall_ext">External wall</option><option value="floor">Floor</option></select>')}
+      </div><div id="inOut" class="calc-out"></div>`;
+    const compute = () => {
+      const r = calcInsulation({ zone: +body.querySelector('#inZ').value, element: body.querySelector('#inE').value });
+      if (r.error) return body.querySelector('#inOut').innerHTML = `<div class="empty">${escapeHtml(r.error)}</div>`;
+      body.querySelector('#inOut').innerHTML = `
+        <div class="calc-row hilite"><span>Target R-value</span><strong>${r.targetR} m²K/W</strong></div>
+        <div class="meta">Required insulation thickness for each common product:</div>
+        ${r.products.map(p => `<div class="calc-row"><span>${escapeHtml(p.name)}</span><strong>${p.thickness_mm} mm</strong></div>`).join('')}`;
+    };
+    body.querySelectorAll('select').forEach(el => el.addEventListener('change', compute));
+    compute();
+  }
+
+  function pipeView(escapeHtml, body) {
+    body.innerHTML = `
+      <div class="calc-form">
+        ${field('Pipe diameter (mm)', '<input id="piD" type="number" step="10" min="50" value="100">')}
+        ${field('Slope (%) — e.g. 1.0 for 1:100', '<input id="piS" type="number" step="0.1" min="0.1" value="1.67">')}
+        ${field('Manning n (smooth PVC ≈ 0.011, concrete ≈ 0.013)', '<input id="piN" type="number" step="0.001" min="0.005" value="0.013">')}
+      </div><div id="piOut" class="calc-out"></div>`;
+    const compute = () => {
+      const r = calcPipeFlow({
+        diameter_mm: +body.querySelector('#piD').value,
+        slope_pct: +body.querySelector('#piS').value,
+        n: +body.querySelector('#piN').value,
+      });
+      if (r.error) return body.querySelector('#piOut').innerHTML = `<div class="empty">${escapeHtml(r.error)}</div>`;
+      body.querySelector('#piOut').innerHTML = `
+        <div class="calc-row"><span>Slope as 1:N</span><strong>1 : ${r.slope_one_in}</strong></div>
+        <div class="calc-row"><span>Pipe area (full bore)</span><strong>${r.area_m2} m²</strong></div>
+        <div class="calc-row"><span>Velocity</span><strong>${r.velocity_ms} m/s</strong></div>
+        <div class="calc-row hilite"><span>Full-bore flow capacity</span><strong>${r.flow_Lps} L/s</strong></div>
+        <div class="callout">${escapeHtml(r.capacity_note)}</div>
+        <div class="meta">Manning's equation, full-bore. Real drains run partially full — capacity at 0.6–0.7 depth ≈ shown × 0.85.</div>`;
+    };
+    body.querySelectorAll('input').forEach(el => el.addEventListener('input', compute));
+    compute();
+  }
+
+  function columnView(escapeHtml, body) {
+    body.innerHTML = `
+      <div class="calc-form">
+        ${field('Shape', '<select id="coS"><option value="square" selected>Square / rectangular</option><option value="circle">Round / circular</option></select>')}
+        ${field('Width (m) — square only', '<input id="coW" type="number" step="0.05" min="0" value="0.3">')}
+        ${field('Depth (m) — square only', '<input id="coD" type="number" step="0.05" min="0" value="0.3">')}
+        ${field('Diameter (m) — round only', '<input id="coDia" type="number" step="0.05" min="0" value="0.3">')}
+        ${field('Height (m)', '<input id="coH" type="number" step="0.1" min="0" value="3">')}
+        ${field('Count', '<input id="coN" type="number" step="1" min="1" value="4">')}
+        ${field('Concrete grade', '<select id="coM"><option value="20">20 MPa</option><option value="25" selected>25 MPa</option><option value="30">30 MPa</option><option value="40">40 MPa</option></select>')}
+      </div><div id="coOut" class="calc-out"></div>`;
+    const compute = () => {
+      const r = calcColumn({
+        shape: body.querySelector('#coS').value,
+        width_m: +body.querySelector('#coW').value,
+        depth_m: +body.querySelector('#coD').value,
+        diameter_m: +body.querySelector('#coDia').value,
+        height_m: +body.querySelector('#coH').value,
+        count: +body.querySelector('#coN').value,
+        mpa: body.querySelector('#coM').value,
+      });
+      if (r.error) return body.querySelector('#coOut').innerHTML = `<div class="empty">${escapeHtml(r.error)}</div>`;
+      body.querySelector('#coOut').innerHTML = `
+        <div class="calc-row"><span>Volume per column</span><strong>${r.eachVolume_m3} m³</strong></div>
+        <div class="calc-row hilite"><span>Total volume (incl. 5% waste)</span><strong>${r.totalVolume_m3} m³</strong></div>
+        <div class="calc-row"><span>Cement</span><strong>${r.cement_bags} × 50 kg bags</strong></div>
+        <div class="calc-row"><span>Sand</span><strong>${r.sand_m3} m³</strong></div>
+        <div class="calc-row"><span>Stone (19 mm)</span><strong>${r.stone_m3} m³</strong></div>
+        <div class="calc-row"><span>Water (target)</span><strong>${r.water_L} L</strong></div>`;
+    };
+    body.querySelectorAll('input, select').forEach(el => el.addEventListener('input', compute));
+    compute();
+  }
+
+  function wallpaperView(escapeHtml, body) {
+    body.innerHTML = `
+      <div class="calc-form">
+        ${field('Wall width (m)', '<input id="wpW" type="number" step="0.1" min="0" value="6">')}
+        ${field('Wall height (m)', '<input id="wpH" type="number" step="0.1" min="0" value="2.7">')}
+        ${field('Roll width (mm)', '<input id="wpRW" type="number" step="10" min="100" value="530">')}
+        ${field('Roll length (m)', '<input id="wpRL" type="number" step="0.5" min="1" value="10">')}
+        ${field('Pattern repeat (mm) — 0 = plain', '<input id="wpRep" type="number" step="10" min="0" value="0">')}
+        ${field('Waste %', '<input id="wpWa" type="number" step="1" min="0" value="10">')}
+      </div><div id="wpOut" class="calc-out"></div>`;
+    const compute = () => {
+      const r = calcWallpaper({
+        wall_w_m: +body.querySelector('#wpW').value,
+        wall_h_m: +body.querySelector('#wpH').value,
+        roll_w_mm: +body.querySelector('#wpRW').value,
+        roll_l_m: +body.querySelector('#wpRL').value,
+        pattern_repeat_mm: +body.querySelector('#wpRep').value,
+        wastePct: +body.querySelector('#wpWa').value,
+      });
+      if (r.error) return body.querySelector('#wpOut').innerHTML = `<div class="empty">${escapeHtml(r.error)}</div>`;
+      body.querySelector('#wpOut').innerHTML = `
+        <div class="calc-row"><span>Strips per roll</span><strong>${r.stripsPerRoll}</strong></div>
+        <div class="calc-row"><span>Strips needed</span><strong>${r.stripsNeeded}</strong></div>
+        <div class="calc-row hilite"><span>Rolls to buy</span><strong>${r.rolls}</strong></div>`;
+    };
+    body.querySelectorAll('input').forEach(el => el.addEventListener('input', compute));
+    compute();
+  }
+
+  function framingView(escapeHtml, body) {
+    body.innerHTML = `
+      <div class="calc-form">
+        ${field('Wall length (m)', '<input id="fmL" type="number" step="0.1" min="0" value="6">')}
+        ${field('Wall height (m)', '<input id="fmH" type="number" step="0.1" min="0" value="2.7">')}
+        ${field('Stud centres (mm)', '<select id="fmC"><option value="400">400</option><option value="600" selected>600</option></select>')}
+        ${field('Plate layers (top + bottom + double-top)', '<select id="fmP"><option value="2">2 (single top + bottom)</option><option value="3" selected>3 (double-top + bottom)</option></select>')}
+      </div><div id="fmOut" class="calc-out"></div>`;
+    const compute = () => {
+      const r = calcFraming({
+        wall_length_m: +body.querySelector('#fmL').value,
+        wall_height_m: +body.querySelector('#fmH').value,
+        stud_centres_mm: +body.querySelector('#fmC').value,
+        plate_layers: +body.querySelector('#fmP').value,
+      });
+      if (r.error) return body.querySelector('#fmOut').innerHTML = `<div class="empty">${escapeHtml(r.error)}</div>`;
+      body.querySelector('#fmOut').innerHTML = `
+        <div class="calc-row hilite"><span>Studs</span><strong>${r.studs} × ${r.stud_length_m} m</strong></div>
+        <div class="calc-row"><span>Plates (linear m)</span><strong>${r.plates_m} m</strong></div>
+        <div class="calc-row"><span>Total framing timber</span><strong>${r.total_m} m</strong></div>`;
+    };
+    body.querySelectorAll('input, select').forEach(el => el.addEventListener('input', compute));
+    compute();
+  }
+
+  function deckView(escapeHtml, body) {
+    body.innerHTML = `
+      <div class="calc-form">
+        ${field('Deck width (m)', '<input id="dkW" type="number" step="0.1" min="0" value="3">')}
+        ${field('Deck length (m)', '<input id="dkL" type="number" step="0.1" min="0" value="5">')}
+        ${field('Joist centres (mm)', '<select id="dkC"><option value="300">300</option><option value="400" selected>400</option><option value="500">500</option></select>')}
+        ${field('Decking-board width (mm)', '<input id="dkB" type="number" step="5" min="80" value="140">')}
+        ${field('Board gap (mm)', '<input id="dkG" type="number" step="1" min="0" value="5">')}
+      </div><div id="dkOut" class="calc-out"></div>`;
+    const compute = () => {
+      const r = calcDeck({
+        deck_w_m: +body.querySelector('#dkW').value,
+        deck_l_m: +body.querySelector('#dkL').value,
+        joist_centres_mm: +body.querySelector('#dkC').value,
+        board_w_mm: +body.querySelector('#dkB').value,
+        board_gap_mm: +body.querySelector('#dkG').value,
+      });
+      if (r.error) return body.querySelector('#dkOut').innerHTML = `<div class="empty">${escapeHtml(r.error)}</div>`;
+      body.querySelector('#dkOut').innerHTML = `
+        <div class="calc-row"><span>Deck area</span><strong>${r.area_m2} m²</strong></div>
+        <div class="calc-row"><span>Joists</span><strong>${r.joists} (≈ ${r.joist_total_m} m total)</strong></div>
+        <div class="calc-row hilite"><span>Decking boards across</span><strong>${r.decking_boards}</strong></div>
+        <div class="calc-row"><span>Total decking length</span><strong>${r.decking_total_m} m</strong></div>`;
+    };
+    body.querySelectorAll('input, select').forEach(el => el.addEventListener('input', compute));
+    compute();
+  }
+
   return {
     view,
     calcBrickMortar, calcPlaster, calcConcrete, recommendedFootingWidth,
     calcRebar, calcTiling, calcPaint, calcExcavation, calcRoofing,
     calcBeam, calcCubeTest, assessSiteClass, convertUnit,
+    calcStairs, calcDrywall, calcInsulation, calcPipeFlow,
+    calcColumn, calcWallpaper, calcFraming, calcDeck,
   };
 })();
