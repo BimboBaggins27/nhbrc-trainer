@@ -895,11 +895,22 @@
       const passed = pct >= Math.round(MOCK_PASS * 100);
       saveMockHistory({ at: Date.now(), correct, total: questions.length, durationS: Math.floor((Date.now() - startedAt) / 1000) });
       const result = document.getElementById('mockResult');
+      const certBtn = passed ? `<button class="btn primary" id="genCert">📜 Download certificate (PDF)</button>` : '';
       result.innerHTML = `<div class="quiz-score ${passed ? 'pass' : 'fail'}">
         <p class="pct">${pct}%</p>
         <p class="lbl">${correct} / ${questions.length} · ${passed ? '🎉 Above the 70% pass mark' : '⚠️ Below the 70% pass mark — review the misses, then retake'}</p>
         <p class="meta">Saved to history.</p>
+        <div class="actions" style="justify-content:center">${certBtn}</div>
       </div>`;
+      const cb = document.getElementById('genCert');
+      if (cb) cb.addEventListener('click', () => {
+        const u = A && A.currentUser();
+        const name = (u?.username || u?.email || 'Student');
+        window.NHBRC_FORMS && window.NHBRC_FORMS.generateCertificate({
+          name, score: correct, total: questions.length,
+          attemptDate: new Date().toLocaleString('en-ZA'),
+        });
+      });
       result.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
@@ -1328,16 +1339,92 @@
   // Tick on first authenticated render
   if (A && A.isAuthenticated()) streakTick();
 
-  // ---------- Tools (calculators) ----------
+  // ---------- Tools (calculators / forms / checklists) ----------
   function viewTools() {
     titleEl.textContent = 'On-site tools';
     backBtn.classList.add('hidden');
     setActiveTab('tools');
-    if (!window.NHBRC_CALCULATORS) {
-      view.innerHTML = '<div class="empty">Calculators failed to load.</div>';
-      return;
+
+    let active = (route.current.payload?.section) || 'calc';
+    function render() {
+      view.innerHTML = `
+        <div class="filter-row" style="margin-bottom:10px">
+          <button class="chip-btn ${active==='calc'?'active':''}" data-s="calc">🧮 Calculators</button>
+          <button class="chip-btn ${active==='forms'?'active':''}" data-s="forms">📄 Forms (1–4)</button>
+          <button class="chip-btn ${active==='checks'?'active':''}" data-s="checks">✅ Inspection checklists</button>
+        </div>
+        <div id="toolsBody"></div>`;
+      view.querySelectorAll('.chip-btn').forEach(b => b.addEventListener('click', () => { active = b.dataset.s; render(); }));
+      const body = view.querySelector('#toolsBody');
+      if (active === 'calc')   return window.NHBRC_CALCULATORS && window.NHBRC_CALCULATORS.view(escapeHtml, body);
+      if (active === 'forms')  return formsView(body);
+      if (active === 'checks') return checklistsView(body);
     }
-    window.NHBRC_CALCULATORS.view(escapeHtml, view);
+    render();
+  }
+
+  function formsView(body) {
+    body.innerHTML = `
+      <p class="meta">Generate ready-to-print Forms 1–4 (SANS 10400-A) with your project details. Native browser <em>Save as PDF</em> — no external tools, no upload.</p>
+      <div class="qa-card" data-form="1"><div class="qa-icon">📄</div><div class="qa-text"><div class="qa-eyebrow">Form 1</div><div class="qa-title">Application for plan approval (Reg A4)</div></div></div>
+      <div class="qa-card" data-form="2"><div class="qa-icon">📄</div><div class="qa-text"><div class="qa-eyebrow">Form 2</div><div class="qa-title">Appointment of competent person (Reg A19)</div></div></div>
+      <div class="qa-card" data-form="3"><div class="qa-icon">📄</div><div class="qa-text"><div class="qa-eyebrow">Form 3</div><div class="qa-title">Certificate of compliance (Reg A19)</div></div></div>
+      <div class="qa-card" data-form="4"><div class="qa-icon">📄</div><div class="qa-text"><div class="qa-eyebrow">Form 4</div><div class="qa-title">Notice of completion (Reg A22)</div></div></div>
+      <div id="formEditor"></div>`;
+    body.querySelectorAll('[data-form]').forEach(el => el.addEventListener('click', () => openFormEditor(el.dataset.form, body.querySelector('#formEditor'))));
+  }
+
+  function openFormEditor(n, target) {
+    const F = window.NHBRC_FORMS;
+    const fields = ({
+      '1': [
+        ['ownerName','Owner full name'],['ownerId','Owner ID / company reg'],['ownerAddress','Postal address'],['ownerPhone','Contact'],['ownerEmail','Email'],
+        ['erf','Erf / stand'],['township','Township / suburb'],['localAuthority','Local authority'],['occupancyClass','Occupancy class (Reg A20)'],['buildingDesc','Building description'],['value','Estimated value (R)'],
+        ['builderName','Home builder name'],['nhbrcNo','NHBRC reg no'],['enrolmentRef','Enrolment ref'],
+      ],
+      '2': [
+        ['erf','Erf / stand'],['ownerName','Owner'],['localAuthority','Local authority'],
+        ['cpName','CP full name'],['cpDiscipline','Discipline'],['cpRegBody','Council'],['cpRegNo','Reg no'],['cpAddress','Address'],['cpContact','Contact'],['regsAccepted','Regs accepted (e.g. B1, H1, K1)'],
+      ],
+      '3': [
+        ['erf','Erf / stand'],['ownerName','Owner'],['localAuthority','Local authority'],['planNo','Approved plan no'],
+        ['cpName','CP full name'],['cpRegBody','Council'],['cpRegNo','Reg no'],['cpDiscipline','Discipline'],
+        ['scope','Scope of certification'],['limits','Limitations / qualifications'],
+      ],
+      '4': [
+        ['erf','Erf / stand'],['ownerName','Owner'],['localAuthority','Local authority'],['planNo','Approved plan no'],
+        ['startDate','Start date'],['completionDate','Completion date'],
+        ['builderName','Home builder'],['nhbrcNo','NHBRC reg'],
+        ['cpForm3List','CPs who issued Form 3 (list)'],
+      ],
+    })[n];
+    if (!fields) { target.innerHTML = '<div class="empty">Unknown form.</div>'; return; }
+    target.innerHTML = `<h3 style="margin-top:14px">Form ${n} — fill in</h3>
+      <div class="calc-form">
+        ${fields.map(([k,l]) => `<label class="calc-field"><span>${escapeHtml(l)}</span><input id="f-${k}" type="text" /></label>`).join('')}
+      </div>
+      <div class="actions"><button class="btn primary big" id="genForm">Generate PDF</button></div>`;
+    target.querySelector('#genForm').addEventListener('click', () => {
+      const data = {};
+      for (const [k] of fields) data[k] = target.querySelector('#f-' + k).value;
+      F['form' + n](data);
+    });
+  }
+
+  function checklistsView(body) {
+    const stages = window.NHBRC_FORMS?.INSPECTION_STAGES || {};
+    let active = 'foundation';
+    function render() {
+      body.innerHTML = `
+        <p class="meta">Tick off each item, then generate a signed PDF for your site file.</p>
+        <div class="filter-row">
+          ${Object.entries(stages).map(([k, s]) => `<button class="chip-btn ${active===k?'active':''}" data-k="${k}">${escapeHtml(s.title)}</button>`).join('')}
+        </div>
+        <div id="chkBody"></div>`;
+      body.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => { active = b.dataset.k; render(); }));
+      window.NHBRC_FORMS.checklistView(active, body.querySelector('#chkBody'), escapeHtml);
+    }
+    render();
   }
 
   // ---------- Privacy Policy (POPIA-aware draft) ----------

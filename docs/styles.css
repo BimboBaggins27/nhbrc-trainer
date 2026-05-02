@@ -814,6 +814,24 @@ figcaption {
 .modal h2 { margin: 0 0 12px; }
 .modal p { font-size: 14px; line-height: 1.5; }
 
+/* Inspection checklist rows */
+.check-row {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 8px 12px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px;
+  margin: 4px 0;
+  font-size: 14px;
+  cursor: pointer;
+}
+.check-row input[type="checkbox"] {
+  width: 18px; height: 18px;
+  margin-top: 2px;
+  accent-color: #0b6e3f;
+  flex: 0 0 18px;
+}
+
 /* Streaks */
 .streak-pill {
   display: inline-block;
