@@ -1,6 +1,6 @@
 :root {
-  --green: #0b6e3f;
-  --green-2: #0e8a4f;
+  --green: #d97a99;
+  --green-2: #e891ad;
   --gold: #f5b800;
   --bg: #f7f9f7;
   --surface: #ffffff;
@@ -8,7 +8,7 @@
   --muted: #5a6b62;
   --border: #e1e7e3;
   --danger: #c03434;
-  --good: #1a8a4a;
+  --good: #c46a89;
   --shadow: 0 1px 3px rgba(15,32,26,.06), 0 4px 14px rgba(15,32,26,.05);
 }
 @media (prefers-color-scheme: dark) {
@@ -739,6 +739,35 @@ figcaption {
 .ss-item strong { font-size: 18px; color: #6fdc9a; }
 .ss-lbl { color: var(--muted); font-size: 11px; }
 
+/* Rotating non-copyright (Pexels CC0) construction photo background */
+@keyframes bg-rotate {
+  0%   { background-image: url('bg/construction-site.jpg'); }
+  17%  { background-image: url('bg/building-frame.jpg'); }
+  33%  { background-image: url('bg/architecture.jpg'); }
+  50%  { background-image: url('bg/concrete-pour.jpg'); }
+  67%  { background-image: url('bg/brickwork.jpg'); }
+  83%  { background-image: url('bg/blueprint.jpg'); }
+  100% { background-image: url('bg/construction-site.jpg'); }
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  z-index: -2;
+  background-size: cover;
+  background-position: center;
+  background-image: url('bg/construction-site.jpg');
+  animation: bg-rotate 90s linear infinite;
+  opacity: 0.18;
+  filter: saturate(0.7) blur(2px);
+}
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgba(8,12,10,.55) 0%, rgba(8,12,10,.78) 60%, rgba(8,12,10,.92) 100%);
+  pointer-events: none;
+}
+
 /* Big drill-in tiles on the Learn home (thumb-friendly) */
 .big-tile {
   display: flex;
@@ -895,6 +924,45 @@ figcaption {
 }
 .modal h2 { margin: 0 0 12px; }
 .modal p { font-size: 14px; line-height: 1.5; }
+
+/* BoQ list */
+.boq-list { display: grid; gap: 6px; margin: 8px 0 12px; }
+.boq-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  position: relative;
+}
+.boq-item .boq-meta { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; margin-bottom: 4px; }
+.boq-item .boq-cat { font-size: 11px; opacity: .55; }
+.boq-item .boq-out { color: var(--muted); display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; }
+.boq-item .boq-out em { font-style: normal; opacity: .65; }
+.boq-rm {
+  position: absolute; top: 8px; right: 10px;
+  background: none; border: 0; color: #ff9b87;
+  font-size: 11px; cursor: pointer;
+}
+.boq-btn {
+  background: rgba(217,122,153,.12);
+  color: #f0c0d0;
+  border: 1px solid rgba(217,122,153,.45);
+  padding: 8px 14px;
+  font-size: 13px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.boq-btn:hover:not(:disabled) { background: rgba(217,122,153,.22); }
+.boq-btn:disabled { opacity: .6; cursor: default; }
+.cite {
+  font-size: 11px;
+  opacity: .6;
+  font-style: italic;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(255,255,255,.08);
+}
 
 /* Inspection checklist rows */
 .check-row {

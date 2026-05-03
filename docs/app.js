@@ -1361,13 +1361,15 @@
       view.innerHTML = `
         <div class="filter-row" style="margin-bottom:10px">
           <button class="chip-btn ${active==='calc'?'active':''}" data-s="calc">🧮 Calculators</button>
-          <button class="chip-btn ${active==='forms'?'active':''}" data-s="forms">📄 Forms (1–4)</button>
-          <button class="chip-btn ${active==='checks'?'active':''}" data-s="checks">✅ Inspection checklists</button>
+          <button class="chip-btn ${active==='boq'?'active':''}" data-s="boq">📋 Bill of Quantities</button>
+          <button class="chip-btn ${active==='forms'?'active':''}" data-s="forms">📄 Forms</button>
+          <button class="chip-btn ${active==='checks'?'active':''}" data-s="checks">✅ Inspections</button>
         </div>
         <div id="toolsBody"></div>`;
       view.querySelectorAll('.chip-btn').forEach(b => b.addEventListener('click', () => { active = b.dataset.s; render(); }));
       const body = view.querySelector('#toolsBody');
       if (active === 'calc')   return window.NHBRC_CALCULATORS && window.NHBRC_CALCULATORS.view(escapeHtml, body);
+      if (active === 'boq')    return window.NHBRC_CALCULATORS && window.NHBRC_CALCULATORS.boqView(escapeHtml, body);
       if (active === 'forms')  return formsView(body);
       if (active === 'checks') return checklistsView(body);
     }
