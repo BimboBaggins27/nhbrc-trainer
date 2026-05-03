@@ -1365,6 +1365,7 @@
       if (active === 'boq')    return window.NHBRC_CALCULATORS && window.NHBRC_CALCULATORS.boqView(escapeHtml, body);
       if (active === 'forms')  return formsView(body);
       if (active === 'checks') return checklistsView(body);
+      if (active === 'snag')   return window.NHBRC_SNAG && window.NHBRC_SNAG.snagView(body);
     }
     function renderHub() {
       // Tools landing: 4 big tiles that drill into each tool family
@@ -1394,7 +1395,12 @@
         </a>
         <a class="big-tile" data-s="checks">
           <div class="bt-icon">✅</div>
-          <div class="bt-text"><div class="bt-title">Inspection checklists</div><div class="bt-sub">Foundation · DPC · Slab · Roof · Drains · Completion + combined project file</div></div>
+          <div class="bt-text"><div class="bt-title">Inspection checklists</div><div class="bt-sub">NHBRC stages + AfriSam / Plascon / TAL / Marley / Aerolite supplier QC sheets</div></div>
+          <div class="bt-chev">›</div>
+        </a>
+        <a class="big-tile" data-s="snag">
+          <div class="bt-icon">📸</div>
+          <div class="bt-text"><div class="bt-title">Snag report &amp; progress photos</div><div class="bt-sub">Phone-camera capture · severity / status tracking · per-snag &amp; consolidated PDF</div></div>
           <div class="bt-chev">›</div>
         </a>`;
       view.querySelectorAll('[data-s]').forEach(el => el.addEventListener('click', () => { active = el.dataset.s; backBtn.classList.remove('hidden'); render(); }));
