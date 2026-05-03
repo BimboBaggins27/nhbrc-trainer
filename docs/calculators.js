@@ -67,21 +67,22 @@ window.NHBRC_CALCULATORS = (function () {
   // Class II mortar (1:1:6) per m³
   const MORTAR_MIX_II = { cement_kg: 280, lime_kg: 100, sand_m3: 1.5 };
   // SANS 2001-CM2 mortar classes (per m³ of mortar).
+  // shortLabel = dropdown text (must fit narrow column). label = result-card text.
   const MORTAR_CLASSES = {
-    I:   { label: 'Class I — 1:¼:3 cement:lime:sand (high strength)',         cement_kg: 460, lime_kg: 60,  sand_m3: 1.05, use: 'Engineering brickwork, retaining walls, manholes, below-DPC.' },
-    II:  { label: 'Class II — 1:½:4½ (1:1:6 traditional, standard external)',  cement_kg: 280, lime_kg: 100, sand_m3: 1.50, use: 'Standard external load-bearing walls. Most domestic work.' },
-    III: { label: 'Class III — 1:1:6 (low strength, internal only)',           cement_kg: 220, lime_kg: 110, sand_m3: 1.55, use: 'Internal non-load-bearing partitions. Plastered work.' },
+    I:   { shortLabel: 'Class I (high strength)',     label: 'Class I — 1:¼:3 cement:lime:sand (high strength)',         cement_kg: 460, lime_kg: 60,  sand_m3: 1.05, use: 'Engineering brickwork, retaining walls, manholes, below-DPC.' },
+    II:  { shortLabel: 'Class II (standard)',         label: 'Class II — 1:½:4½ (1:1:6 traditional, standard external)',  cement_kg: 280, lime_kg: 100, sand_m3: 1.50, use: 'Standard external load-bearing walls. Most domestic work.' },
+    III: { shortLabel: 'Class III (internal)',        label: 'Class III — 1:1:6 (low strength, internal only)',           cement_kg: 220, lime_kg: 110, sand_m3: 1.55, use: 'Internal non-load-bearing partitions. Plastered work.' },
   };
   // South African brick types (SANS 227 — clay; SANS 1215 — concrete masonry units).
   const BRICK_TYPES = {
-    NFP:    { label: 'NFP — Non-Facing Plaster (stock brick, plastered)',  std: 'SANS 227', size_mm: '222×106×73',  notes: 'Cheapest. Always plastered. Min 7 MPa.' },
-    NFX:    { label: 'NFX — Non-Facing Extra (high strength, plastered)',  std: 'SANS 227', size_mm: '222×106×73',  notes: 'Higher strength than NFP. Min 14 MPa. Below-DPC.' },
-    FBA:    { label: 'FBA — Face Brick Aesthetic',                           std: 'SANS 227', size_mm: '222×106×73',  notes: 'Visible finish. Tolerance ±2 mm. Colour variation allowed.' },
-    FBS:    { label: 'FBS — Face Brick Standard',                            std: 'SANS 227', size_mm: '222×106×73',  notes: 'Visible finish. Tighter tolerance ±2 mm. Min 17 MPa.' },
-    FBX:    { label: 'FBX — Face Brick Extra (premium)',                     std: 'SANS 227', size_mm: '222×106×73',  notes: 'Highest finish + dimensional grade. Min 21 MPa.' },
-    Maxi:   { label: 'Maxi brick (cement, plastered)',                       std: 'SANS 1215', size_mm: '290×140×90',  notes: 'Concrete. ~half the bricks per m². Plastered. Common in RDP.' },
-    Stock_M:{ label: 'Stock-brick (cement, plastered)',                      std: 'SANS 1215', size_mm: '222×106×73',  notes: 'Concrete. Cheaper than clay NFP. Plastered.' },
-    Paver:  { label: 'Paver block (clay or concrete)',                       std: 'SANS 1058', size_mm: '200×100×50/65', notes: 'Driveways/pedestrian. Not for walls.' },
+    NFP:    { shortLabel: 'NFP (stock brick)',         label: 'NFP — Non-Facing Plaster (stock brick, plastered)',  std: 'SANS 227', size_mm: '222×106×73',  notes: 'Cheapest. Always plastered. Min 7 MPa.' },
+    NFX:    { shortLabel: 'NFX (below-DPC)',           label: 'NFX — Non-Facing Extra (high strength, plastered)',  std: 'SANS 227', size_mm: '222×106×73',  notes: 'Higher strength than NFP. Min 14 MPa. Below-DPC.' },
+    FBA:    { shortLabel: 'FBA (face aesthetic)',      label: 'FBA — Face Brick Aesthetic',                          std: 'SANS 227', size_mm: '222×106×73',  notes: 'Visible finish. Tolerance ±2 mm. Colour variation allowed.' },
+    FBS:    { shortLabel: 'FBS (face standard)',       label: 'FBS — Face Brick Standard',                           std: 'SANS 227', size_mm: '222×106×73',  notes: 'Visible finish. Tighter tolerance ±2 mm. Min 17 MPa.' },
+    FBX:    { shortLabel: 'FBX (face extra)',          label: 'FBX — Face Brick Extra (premium)',                    std: 'SANS 227', size_mm: '222×106×73',  notes: 'Highest finish + dimensional grade. Min 21 MPa.' },
+    Maxi:   { shortLabel: 'Maxi (cement)',             label: 'Maxi brick (cement, plastered)',                      std: 'SANS 1215', size_mm: '290×140×90', notes: 'Concrete. ~half the bricks per m². Plastered. Common in RDP.' },
+    Stock_M:{ shortLabel: 'Stock-brick (cement)',      label: 'Stock-brick (cement, plastered)',                     std: 'SANS 1215', size_mm: '222×106×73', notes: 'Concrete. Cheaper than clay NFP. Plastered.' },
+    Paver:  { shortLabel: 'Paver block',               label: 'Paver block (clay or concrete)',                      std: 'SANS 1058', size_mm: '200×100×50/65', notes: 'Driveways/pedestrian. Not for walls.' },
   };
 
   // Concrete by grade — per m³
@@ -144,6 +145,7 @@ window.NHBRC_CALCULATORS = (function () {
   // Coverage in m² per 20 kg bag at 6 mm notched-trowel application.
   const TILE_TYPES = {
     ceramic_glazed: {
+      shortLabel: 'Ceramic glazed',
       label: 'Ceramic glazed (wall ≤300×300 / floor ≤450×450)',
       adhesive: 'TAL Goldstar — standard cement-based',
       adhesive_m2_per_bag: 5,
@@ -151,6 +153,7 @@ window.NHBRC_CALCULATORS = (function () {
       notes: 'Mix with water only. Ribbed back of tile faces down. Not suitable for fully-immersed.'
     },
     porcelain: {
+      shortLabel: 'Porcelain',
       label: 'Porcelain (low absorption, all formats)',
       adhesive: 'TAL Tradeset Plus — flexible C2TE',
       adhesive_m2_per_bag: 4.5,
@@ -158,6 +161,7 @@ window.NHBRC_CALCULATORS = (function () {
       notes: 'Porcelain absorbs <0.5% — needs polymer-modified flexible adhesive. Back-butter large formats.'
     },
     porcelain_large: {
+      shortLabel: 'Porcelain large-format',
       label: 'Large-format porcelain (>600 mm any side)',
       adhesive: 'TAL Megaset / Tradeset Plus — C2TE S1',
       adhesive_m2_per_bag: 4,
@@ -165,6 +169,7 @@ window.NHBRC_CALCULATORS = (function () {
       notes: 'Solid bedding required (≥90% coverage). Use 10–12 mm notched trowel. Back-butter the tile.'
     },
     natural_stone: {
+      shortLabel: 'Natural stone',
       label: 'Natural stone (marble / granite / slate / travertine)',
       adhesive: 'TAL Tradeset Plus White — non-staining flexible',
       adhesive_m2_per_bag: 4.5,
@@ -172,6 +177,7 @@ window.NHBRC_CALCULATORS = (function () {
       notes: 'White adhesive prevents grey shadow through translucent stone. Seal tile before grouting.'
     },
     mosaic: {
+      shortLabel: 'Mosaic',
       label: 'Mosaic (≤50×50 mm chips, sheet-mounted)',
       adhesive: 'TAL Goldstar (paper-faced) / TAL Tradeset (mesh-back)',
       adhesive_m2_per_bag: 5.5,
@@ -179,6 +185,7 @@ window.NHBRC_CALCULATORS = (function () {
       notes: 'Use 3–4 mm notched trowel. Lay sheets level — beat in with a cork float.'
     },
     quarry: {
+      shortLabel: 'Quarry / terracotta',
       label: 'Quarry / terracotta (high absorption, unglazed)',
       adhesive: 'TAL Goldstar — standard cement-based',
       adhesive_m2_per_bag: 5,
@@ -186,6 +193,7 @@ window.NHBRC_CALCULATORS = (function () {
       notes: 'Pre-wet tiles to control absorption. Seal after grouting (oils + water).'
     },
     pool_external: {
+      shortLabel: 'Pool / submerged',
       label: 'Pool / fully-submerged / external',
       adhesive: 'TAL Tradeset Plus + TAL Bond admix',
       adhesive_m2_per_bag: 4,
@@ -472,20 +480,20 @@ window.NHBRC_CALCULATORS = (function () {
   // ---------- Tool: Pipe flow / drainage capacity (Manning's) ----------
   // Pipe materials available on the SA market — Manning n + standards + use.
   const PIPE_MATERIALS = {
-    upvc_sewer:    { label: 'uPVC sewer (SANS 791, Class 34)',          n: 0.011, std: 'SANS 791',  use: 'Underground foul + storm drainage. Solvent-weld socket joints.', diameters: [50,75,110,160,200,250,315], min_slope_note: 'Foul Ø100: 1:60 (1.67%). Storm Ø100: 1:100. Larger Ø use 1:120 minimum.' },
-    upvc_pressure: { label: 'uPVC pressure (SANS 966-1, Class 6/9/12/16)', n: 0.010, std: 'SANS 966-1', use: 'Cold pressurised water mains. Class = max bar (e.g. Class 12 = 1.2 MPa).', diameters: [25,32,40,50,63,75,90,110,160], min_slope_note: 'Pressure pipe — slope is for drainage, not gravity flow.' },
-    hdpe:          { label: 'HDPE (SANS 4427, PE100, PN10/16)',          n: 0.009, std: 'SANS 4427',  use: 'Buried pressure water + gas. Butt-fused or electrofusion joints.', diameters: [20,25,32,50,63,90,110,160,225,315], min_slope_note: 'Pressure pipe; slope for venting/draining.' },
-    concrete:      { label: 'Concrete pipe (SANS 677)',                  n: 0.013, std: 'SANS 677',   use: 'Stormwater + sewer mains ≥Ø300. Spigot-and-socket / ogee joint.', diameters: [300,375,450,525,600,750,900,1050,1200], min_slope_note: 'Storm: 1:120 typical for Ø450. Sewer: design for ≥0.6 m/s self-cleansing.' },
-    cast_iron:     { label: 'Cast iron (CISP, SANS 746)',                n: 0.013, std: 'SANS 746',   use: 'Above-ground soil + waste in commercial. Push-fit gasket joints.', diameters: [50,75,100,150,200,250], min_slope_note: 'Foul Ø100: 1:60. Smooth bore — same gradients as uPVC.' },
-    galv_steel:    { label: 'Galvanised steel (SANS 62)',                n: 0.014, std: 'SANS 62',    use: 'Hot/cold water above ground (legacy). Threaded BSP joints.', diameters: [15,20,25,32,40,50,65,80,100], min_slope_note: 'Pressure pipe; falls only for drainage.' },
-    copper:        { label: 'Copper (SANS 460, Type B)',                 n: 0.011, std: 'SANS 460',   use: 'Hot water + gas. Capillary or compression joints.', diameters: [15,22,28,35,42,54], min_slope_note: 'Pressure pipe; falls for venting.' },
+    upvc_sewer:    { shortLabel: 'uPVC sewer',         label: 'uPVC sewer (SANS 791, Class 34)',          n: 0.011, std: 'SANS 791',  use: 'Underground foul + storm drainage. Solvent-weld socket joints.', diameters: [50,75,110,160,200,250,315], min_slope_note: 'Foul Ø100: 1:60 (1.67%). Storm Ø100: 1:100. Larger Ø use 1:120 minimum.' },
+    upvc_pressure: { shortLabel: 'uPVC pressure',      label: 'uPVC pressure (SANS 966-1, Class 6/9/12/16)', n: 0.010, std: 'SANS 966-1', use: 'Cold pressurised water mains. Class = max bar (e.g. Class 12 = 1.2 MPa).', diameters: [25,32,40,50,63,75,90,110,160], min_slope_note: 'Pressure pipe — slope is for drainage, not gravity flow.' },
+    hdpe:          { shortLabel: 'HDPE',               label: 'HDPE (SANS 4427, PE100, PN10/16)',          n: 0.009, std: 'SANS 4427',  use: 'Buried pressure water + gas. Butt-fused or electrofusion joints.', diameters: [20,25,32,50,63,90,110,160,225,315], min_slope_note: 'Pressure pipe; slope for venting/draining.' },
+    concrete:      { shortLabel: 'Concrete pipe',      label: 'Concrete pipe (SANS 677)',                  n: 0.013, std: 'SANS 677',   use: 'Stormwater + sewer mains ≥Ø300. Spigot-and-socket / ogee joint.', diameters: [300,375,450,525,600,750,900,1050,1200], min_slope_note: 'Storm: 1:120 typical for Ø450. Sewer: design for ≥0.6 m/s self-cleansing.' },
+    cast_iron:     { shortLabel: 'Cast iron',          label: 'Cast iron (CISP, SANS 746)',                n: 0.013, std: 'SANS 746',   use: 'Above-ground soil + waste in commercial. Push-fit gasket joints.', diameters: [50,75,100,150,200,250], min_slope_note: 'Foul Ø100: 1:60. Smooth bore — same gradients as uPVC.' },
+    galv_steel:    { shortLabel: 'Galvanised steel',   label: 'Galvanised steel (SANS 62)',                n: 0.014, std: 'SANS 62',    use: 'Hot/cold water above ground (legacy). Threaded BSP joints.', diameters: [15,20,25,32,40,50,65,80,100], min_slope_note: 'Pressure pipe; falls only for drainage.' },
+    copper:        { shortLabel: 'Copper',             label: 'Copper (SANS 460, Type B)',                 n: 0.011, std: 'SANS 460',   use: 'Hot water + gas. Capillary or compression joints.', diameters: [15,22,28,35,42,54], min_slope_note: 'Pressure pipe; falls for venting.' },
   };
   // Useful purpose presets that pin slope rules.
   const PIPE_PURPOSE = {
-    foul:        { label: 'Foul drainage (sewerage)',           min_slope_pct: 1.67, target_v_min: 0.7, target_v_max: 2.5, note: 'Self-cleansing 0.7–2.5 m/s. SANS 10400-P table 1 minimum gradients.' },
-    stormwater:  { label: 'Stormwater drainage',                 min_slope_pct: 1.0,  target_v_min: 0.6, target_v_max: 4.0, note: 'Less aggressive gradient. Velocity to 4 m/s acceptable (no solids).' },
-    soil_vent:   { label: 'Soil vent / waste branch (≤Ø50)',     min_slope_pct: 2.0,  target_v_min: 0.7, target_v_max: 2.5, note: 'Steeper for small bores. Branch ≤3 m before next vent.' },
-    pressure:    { label: 'Pressure water main',                 min_slope_pct: 0,    target_v_min: 0.5, target_v_max: 3.0, note: 'Slope for venting only. Velocity 1.5–2.5 m/s typical for sizing.' },
+    foul:        { shortLabel: 'Foul drainage',        label: 'Foul drainage (sewerage)',           min_slope_pct: 1.67, target_v_min: 0.7, target_v_max: 2.5, note: 'Self-cleansing 0.7–2.5 m/s. SANS 10400-P table 1 minimum gradients.' },
+    stormwater:  { shortLabel: 'Stormwater',           label: 'Stormwater drainage',                min_slope_pct: 1.0,  target_v_min: 0.6, target_v_max: 4.0, note: 'Less aggressive gradient. Velocity to 4 m/s acceptable (no solids).' },
+    soil_vent:   { shortLabel: 'Soil vent / waste',    label: 'Soil vent / waste branch (≤Ø50)',    min_slope_pct: 2.0,  target_v_min: 0.7, target_v_max: 2.5, note: 'Steeper for small bores. Branch ≤3 m before next vent.' },
+    pressure:    { shortLabel: 'Pressure water',       label: 'Pressure water main',                min_slope_pct: 0,    target_v_min: 0.5, target_v_max: 3.0, note: 'Slope for venting only. Velocity 1.5–2.5 m/s typical for sizing.' },
   };
   function calcPipeFlow({ diameter_mm, slope_pct = 1, n = 0.013, purpose = 'foul', material = 'upvc_sewer' }) {
     if (!diameter_mm || !slope_pct) return { error: 'Set diameter + slope.' };
@@ -673,16 +681,71 @@ window.NHBRC_CALCULATORS = (function () {
     render();
   }
 
+  // ----- Presets (typical SA building scenarios) -----
+  // Each entry sets the calculator's input fields when picked. "custom" leaves
+  // them alone — user edits values directly. Each calc has a small preset list.
+
+  const PRESETS = {
+    brick: [
+      { key:'custom',     label:'— Custom (edit values) —' },
+      { key:'rdp_room',   label:'RDP single room — 4×3 m external (12 m²)',           length:4,    height:2.7,  type:'half' },
+      { key:'garage',     label:'Single garage long wall — 6 m × 2.7 m',              length:6,    height:2.7,  type:'one' },
+      { key:'house_perim',label:'40 m² house perimeter — 13 m × 2.7 m',               length:13,   height:2.7,  type:'one' },
+      { key:'2storey',    label:'Double-storey wall — 6 m × 5.4 m',                   length:6,    height:5.4,  type:'oneandhalf' },
+      { key:'bdry_wall',  label:'Boundary wall — 30 m × 1.8 m (one-brick)',           length:30,   height:1.8,  type:'one' },
+      { key:'partition',  label:'Internal partition — 5 m × 2.7 m (half-brick)',      length:5,    height:2.7,  type:'half' },
+    ],
+    concrete: [
+      { key:'custom',     label:'— Custom (edit values) —' },
+      { key:'driveway',   label:'Driveway slab — 5 × 3 × 0.10 m',                     length:5,    width:3,     depth:0.10, mpa:'25' },
+      { key:'garage_slab',label:'Garage floor slab — 6 × 3 × 0.10 m',                 length:6,    width:3,     depth:0.10, mpa:'25' },
+      { key:'patio',      label:'Patio slab — 4 × 4 × 0.10 m',                        length:4,    width:4,     depth:0.10, mpa:'25' },
+      { key:'house_slab', label:'House floor slab — 10 × 8 × 0.10 m',                 length:10,   width:8,     depth:0.10, mpa:'25' },
+      { key:'foundation_strip',label:'Strip footing — 20 m × 0.6 × 0.2 m',            length:20,   width:0.6,   depth:0.2,  mpa:'15' },
+      { key:'suspended',  label:'Suspended slab — 10 × 4 × 0.18 m',                   length:10,   width:4,     depth:0.18, mpa:'30' },
+      { key:'col_pad',    label:'Column pad — 1.2 × 1.2 × 0.4 m',                     length:1.2,  width:1.2,   depth:0.4,  mpa:'25' },
+    ],
+    excav: [
+      { key:'custom',     label:'— Custom (edit values) —' },
+      { key:'strip_foot', label:'Strip footing trench — 20 m × 0.6 × 0.6 m',          length:20,   width:0.6,   depth:0.6,  soil:'mixed' },
+      { key:'col_pad',    label:'Column pad — 1.5 × 1.5 × 1.0 m',                     length:1.5,  width:1.5,   depth:1.0,  soil:'mixed' },
+      { key:'manhole',    label:'Manhole — 1.2 × 1.2 × 2.0 m',                        length:1.2,  width:1.2,   depth:2.0,  soil:'clay' },
+      { key:'storm_pipe', label:'Stormwater pipe — 30 m × 0.4 × 0.6 m',               length:30,   width:0.4,   depth:0.6,  soil:'sand' },
+      { key:'sewer_pipe', label:'Sewer pipe (Ø110) — 30 m × 0.5 × 1.0 m',             length:30,   width:0.5,   depth:1.0,  soil:'sand' },
+      { key:'rdp_pads',   label:'RDP house pads — 8 m × 0.6 × 0.5 m',                 length:8,    width:0.6,   depth:0.5,  soil:'mixed' },
+      { key:'pool',       label:'Swimming pool excavation — 8 × 4 × 1.8 m',           length:8,    width:4,     depth:1.8,  soil:'clay' },
+    ],
+    paint: [
+      { key:'custom',     label:'— Custom (edit values) —' },
+      { key:'lounge',     label:'Average lounge — 35 m² walls + ceiling',             area:35,   coats:2 },
+      { key:'bedroom',    label:'Bedroom — 45 m² walls + ceiling',                    area:45,   coats:2 },
+      { key:'house_int',  label:'Whole house interior — 250 m²',                      area:250,  coats:2 },
+      { key:'house_ext',  label:'Whole house exterior — 180 m²',                      area:180,  coats:2 },
+      { key:'roof_ibr',   label:'Roof — 100 m² IBR',                                  area:100,  coats:2 },
+      { key:'bdry_wall',  label:'Boundary wall — 30 m × 1.8 m (54 m² × 2 sides)',    area:108,  coats:2 },
+    ],
+  };
+
+  function presetSelect(id, group) {
+    const opts = PRESETS[group].map(p =>
+      `<option value="${p.key}"${p.key==='custom'?' selected':''}>${p.label}</option>`).join('');
+    return `<select id="${id}">${opts}</select>`;
+  }
+  function applyPreset(group, key) {
+    return PRESETS[group].find(p => p.key === key) || null;
+  }
+
   // ----- Per-tool views -----
 
   function brickView(escapeHtml, body) {
     const brickOpts = Object.entries(BRICK_TYPES)
       .filter(([k]) => k !== 'Paver')
-      .map(([k, v]) => `<option value="${k}"${k==='NFP'?' selected':''}>${v.label}</option>`).join('');
+      .map(([k, v]) => `<option value="${k}"${k==='NFP'?' selected':''}>${v.shortLabel || v.label}</option>`).join('');
     const mortarOpts = Object.entries(MORTAR_CLASSES).map(([k, v]) =>
-      `<option value="${k}"${k==='II'?' selected':''}>${v.label}</option>`).join('');
+      `<option value="${k}"${k==='II'?' selected':''}>${v.shortLabel || v.label}</option>`).join('');
     body.innerHTML = `
       <div class="calc-form">
+        ${field('Preset', presetSelect('bPreset', 'brick'))}
         ${field('Wall length (m)', '<input id="bL" type="number" step="0.1" min="0" value="10">')}
         ${field('Wall height (m)', '<input id="bH" type="number" step="0.1" min="0" value="2.7">')}
         ${field('Wall type', '<select id="bT"><option value="half">Half-brick (106 mm)</option><option value="one" selected>One-brick (220 mm)</option><option value="oneandhalf">One-and-a-half (330 mm)</option></select>')}
@@ -692,6 +755,15 @@ window.NHBRC_CALCULATORS = (function () {
       </div>
       <div id="bDia"></div>
       <div id="bOut" class="calc-out"></div>`;
+    body.querySelector('#bPreset').addEventListener('change', (ev) => {
+      const p = applyPreset('brick', ev.target.value);
+      if (p && p.key !== 'custom') {
+        body.querySelector('#bL').value = p.length;
+        body.querySelector('#bH').value = p.height;
+        body.querySelector('#bT').value = p.type;
+        compute();
+      }
+    });
     const wallThicknessFor = (t) => ({ half: 106, one: 220, oneandhalf: 332 })[t] || 220;
     const compute = () => {
       const length_m = +body.querySelector('#bL').value;
@@ -780,6 +852,7 @@ window.NHBRC_CALCULATORS = (function () {
   function concreteView(escapeHtml, body) {
     body.innerHTML = `
       <div class="calc-form">
+        ${field('Preset', presetSelect('cPreset', 'concrete'))}
         ${field('Length (m)', '<input id="cL" type="number" step="0.1" min="0" value="10">')}
         ${field('Width / breadth (m)', '<input id="cW" type="number" step="0.05" min="0" value="0.6">')}
         ${field('Depth / thickness (m)', '<input id="cD" type="number" step="0.05" min="0" value="0.2">')}
@@ -788,6 +861,16 @@ window.NHBRC_CALCULATORS = (function () {
       </div>
       <div id="cDia"></div>
       <div id="cOut" class="calc-out"></div>`;
+    body.querySelector('#cPreset').addEventListener('change', (ev) => {
+      const p = applyPreset('concrete', ev.target.value);
+      if (p && p.key !== 'custom') {
+        body.querySelector('#cL').value = p.length;
+        body.querySelector('#cW').value = p.width;
+        body.querySelector('#cD').value = p.depth;
+        body.querySelector('#cM').value = p.mpa;
+        compute();
+      }
+    });
     const compute = () => {
       const length_m = +body.querySelector('#cL').value;
       const width_m = +body.querySelector('#cW').value;
@@ -917,7 +1000,7 @@ window.NHBRC_CALCULATORS = (function () {
 
   function tileView(escapeHtml, body) {
     const tileOpts = Object.entries(TILE_TYPES).map(([k, v], i) =>
-      `<option value="${k}"${i===0?' selected':''}>${v.label}</option>`).join('');
+      `<option value="${k}"${i===0?' selected':''}>${v.shortLabel || v.label}</option>`).join('');
     body.innerHTML = `
       <div class="calc-form">
         ${field('Tile type', `<select id="tType">${tileOpts}</select>`)}
@@ -968,15 +1051,24 @@ window.NHBRC_CALCULATORS = (function () {
 
   function paintView(escapeHtml, body) {
     const opts = Object.entries(PLASCON).map(([k, v]) =>
-      `<option value="${k}"${k==='wall_and_all'?' selected':''}>${v.label} — ${v.cov} m²/L (${v.use})</option>`).join('');
+      `<option value="${k}"${k==='wall_and_all'?' selected':''}>${v.label} (${v.cov} m²/L)</option>`).join('');
     body.innerHTML = `
       <div class="calc-form">
+        ${field('Preset', presetSelect('pnPreset', 'paint'))}
         ${field('Area (m²)', '<input id="pnA" type="number" step="1" min="0" value="100">')}
         ${field('Coats', '<input id="pnC" type="number" step="1" min="1" value="2">')}
         ${field('Plascon product', `<select id="pnT">${opts}</select>`)}
       </div>
       <div id="pnDia"></div>
       <div id="pnOut" class="calc-out"></div>`;
+    body.querySelector('#pnPreset').addEventListener('change', (ev) => {
+      const p = applyPreset('paint', ev.target.value);
+      if (p && p.key !== 'custom') {
+        body.querySelector('#pnA').value = p.area;
+        body.querySelector('#pnC').value = p.coats;
+        compute();
+      }
+    });
     const compute = () => {
       const area_m2 = +body.querySelector('#pnA').value;
       const coats = +body.querySelector('#pnC').value;
@@ -1026,6 +1118,7 @@ window.NHBRC_CALCULATORS = (function () {
   function excavView(escapeHtml, body) {
     body.innerHTML = `
       <div class="calc-form">
+        ${field('Preset', presetSelect('xPreset', 'excav'))}
         ${field('Length (m)', '<input id="xL" type="number" step="0.1" min="0" value="20">')}
         ${field('Width (m)', '<input id="xW" type="number" step="0.1" min="0" value="0.6">')}
         ${field('Depth (m)', '<input id="xD" type="number" step="0.1" min="0" value="0.6">')}
@@ -1033,6 +1126,16 @@ window.NHBRC_CALCULATORS = (function () {
       </div>
       <div id="xDia"></div>
       <div id="xOut" class="calc-out"></div>`;
+    body.querySelector('#xPreset').addEventListener('change', (ev) => {
+      const p = applyPreset('excav', ev.target.value);
+      if (p && p.key !== 'custom') {
+        body.querySelector('#xL').value = p.length;
+        body.querySelector('#xW').value = p.width;
+        body.querySelector('#xD').value = p.depth;
+        body.querySelector('#xS').value = p.soil;
+        compute();
+      }
+    });
     const compute = () => {
       const length_m = +body.querySelector('#xL').value;
       const width_m = +body.querySelector('#xW').value;
@@ -1550,30 +1653,34 @@ window.NHBRC_CALCULATORS = (function () {
   }
 
   function drawExcav({ length_m, width_m, depth_m, soil }) {
-    // Engineering-style cross-section: ground line, hatched soil, sloped trench
-    // walls, properly-shaped spoil mound, worker silhouette for scale.
+    // Engineering-style cross-section. Layout reads left-to-right:
+    //   [worker] | [trench] | [spoil heap]   — never overlap.
     const W = 460, H = 280;
-    const skyH = 70;                    // sky / ambient zone above ground
-    const gnd = skyH;                   // ground line y
-    const cx = W / 2 - 40;               // trench centre offset left to leave room for spoil
+    const skyH = 70;
+    const gnd = skyH;
     // Pixel dimensions
     const widthPx = Math.max(60, Math.min(160, width_m * 50));
     const depthPx = Math.max(50, Math.min(150, depth_m * 60));
     const slopeOff = soil === 'rock' ? 4 : soil === 'clay' ? 16 : soil === 'gravel' ? 22 : 28;
+    // Position trench centred-ish, with reserved zones for worker (left) and spoil (right)
+    const workerZone = 70;            // ~50 px figure + label
+    const spoilBase = Math.min(120, widthPx * 1.4);
+    const spoilZone = spoilBase + 30; // heap + depth-dim arrow space
+    const cx = workerZone + (W - workerZone - spoilZone) / 2;
     // Trench corner points
     const x1 = cx - widthPx/2, x2 = cx + widthPx/2;
     const y0 = gnd, y1 = gnd + depthPx;
     const xb1 = x1 + slopeOff, xb2 = x2 - slopeOff;
-    // Soil hatch pattern
+    // Soil colours
     const soilColors = { sand: '#d8b070', gravel: '#a89878', mixed: '#8a6c4a', clay: '#6a4828', rock: '#7a7570', heaving: '#5a3818', collapsing: '#c8a060' };
     const fill = soilColors[soil] || '#8a6c4a';
-    // Spoil mound — proper trapezoidal heap with rounded crown
-    const spoilX = x2 + 30;
-    const spoilBase = Math.min(120, widthPx * 1.4);
+    // Spoil heap to the right of trench
+    const spoilX = x2 + spoilZone/2;
     const spoilH = Math.max(20, depthPx * 0.55);
-    // Worker silhouette — 1.8 m scale reference
+    // Worker silhouette — to the LEFT of the trench, well clear of spoil heap
+    const workerX = x1 - 36;
     const worker = `
-      <g transform="translate(${x2 + 14}, ${gnd - 50}) scale(0.6)" opacity="0.7">
+      <g transform="translate(${workerX}, ${gnd - 50}) scale(0.6)" opacity="0.75">
         <circle cx="0" cy="0" r="6" fill="${C.ink}"/>
         <line x1="0" y1="6" x2="0" y2="32" stroke="${C.ink}" stroke-width="3"/>
         <line x1="0" y1="14" x2="-9" y2="22" stroke="${C.ink}" stroke-width="2"/>
@@ -1581,7 +1688,7 @@ window.NHBRC_CALCULATORS = (function () {
         <line x1="0" y1="32" x2="-7" y2="48" stroke="${C.ink}" stroke-width="3"/>
         <line x1="0" y1="32" x2="7" y2="48" stroke="${C.ink}" stroke-width="3"/>
       </g>
-      <text x="${x2 + 22}" y="${gnd - 40}" font-size="9" fill="${C.muted}">~1.8 m</text>
+      <text x="${workerX}" y="${gnd - 56}" font-size="9" text-anchor="middle" fill="${C.muted}">~1.8 m</text>
     `;
     return svgWrap(`
       <defs>
@@ -1691,55 +1798,73 @@ window.NHBRC_CALCULATORS = (function () {
   }
 
   function drawInsulation({ thickness_mm, R, productName }) {
-    // Wall buildup section: external plaster, brick, cavity, insulation,
-    // inner brick, internal plaster — labelled with thicknesses, with
-    // outside/inside arrows and dimension chain.
-    const W = 460, H = 280;
-    const top = 40, bot = H - 60;
-    let x = 40;
+    // Wall buildup cross-section. Layout budgets the canvas width:
+    //   left margin · wall layers · gap · R-value callout · right margin
+    // so nothing ever clips. Layer labels are placed BELOW the wall (not
+    // rotated inside narrow strips) to avoid the overlap problem.
+    const W = 480, H = 300;
+    const cardW = 130, gap = 18;
+    const leftPad = 30, rightPad = 14;
+    const top = 60, bot = H - 80;
+    const wallMaxW = W - leftPad - rightPad - gap - cardW;  // ≈ 290 px
+    // Keep insulation visually proportional but capped so the wall fits.
+    const insulPx = Math.min(wallMaxW - 80, Math.max(40, thickness_mm * 0.55));
     const layers = [
-      { w: 12, fill: '#d8c4a0', hatch: null,             label: 'plaster',  sub: '12 mm' },
-      { w: 28, fill: '#b87a5a', hatch: null,             label: 'brick',    sub: '110 mm' },
-      { w: 18, fill: '#0c1a13', hatch: null,             label: 'cavity',   sub: '50 mm' },
-      { w: Math.min(170, Math.max(30, thickness_mm * 0.7)), fill: '#f5d56a', hatch: 'url(#hatchInsul)', label: 'insulation', sub: thickness_mm + ' mm' },
-      { w: 28, fill: '#b87a5a', hatch: null,             label: 'brick',    sub: '110 mm' },
-      { w: 12, fill: '#e8d8b8', hatch: null,             label: 'plaster',  sub: '12 mm' },
+      { w: 14, fill: '#d8c4a0', hatch: null,                label: 'plaster',    sub: '12 mm' },
+      { w: 30, fill: '#b87a5a', hatch: null,                label: 'brick',      sub: '110 mm' },
+      { w: 18, fill: '#0c1a13', hatch: null,                label: 'cavity',     sub: '50 mm' },
+      { w: insulPx, fill: '#f5d56a', hatch: 'url(#hatchInsul)', label: 'insulation', sub: thickness_mm + ' mm' },
+      { w: 30, fill: '#b87a5a', hatch: null,                label: 'brick',      sub: '110 mm' },
+      { w: 14, fill: '#e8d8b8', hatch: null,                label: 'plaster',    sub: '12 mm' },
     ];
+    const totalLayerW = layers.reduce((s, L) => s + L.w, 0);
+    // Re-fit if total exceeds budget
+    const fitScale = totalLayerW > wallMaxW ? wallMaxW / totalLayerW : 1;
+    layers.forEach(L => L.w *= fitScale);
+    let x = leftPad;
     let parts = '';
-    let dimChain = '';
-    let labels = '';
+    let dimTicks = '';
+    let layerCallouts = '';
+    const callY1 = bot + 18, callY2 = bot + 32;
     for (const L of layers) {
-      parts += `<rect x="${x}" y="${top}" width="${L.w}" height="${bot - top}" fill="${L.fill}" stroke="#222" stroke-width="0.5"/>`;
+      parts += `<rect x="${x}" y="${top}" width="${L.w}" height="${bot - top}" fill="${L.fill}" stroke="#222" stroke-width="0.6"/>`;
       if (L.hatch) parts += `<rect x="${x}" y="${top}" width="${L.w}" height="${bot - top}" fill="${L.hatch}"/>`;
-      // dim ticks
-      dimChain += `<line x1="${x}" y1="${bot + 12}" x2="${x}" y2="${bot + 26}" stroke="${C.muted}" stroke-width="0.6"/>`;
-      // rotated label inside layer
-      if (L.w >= 14) {
-        labels += `<text x="${x + L.w/2}" y="${(top+bot)/2}" font-size="10" text-anchor="middle" fill="#111" font-weight="600" transform="rotate(-90 ${x + L.w/2} ${(top+bot)/2})">${L.label}</text>`;
-        labels += `<text x="${x + L.w/2}" y="${(top+bot)/2 + 14}" font-size="8" text-anchor="middle" fill="#111" transform="rotate(-90 ${x + L.w/2} ${(top+bot)/2 + 14})">${L.sub}</text>`;
-      }
+      dimTicks += `<line x1="${x}" y1="${bot + 4}" x2="${x}" y2="${bot + 14}" stroke="${C.muted}" stroke-width="0.6"/>`;
+      // Per-layer call-out: leader line + label below the wall (no rotation)
+      const cx = x + L.w / 2;
+      layerCallouts += `<line x1="${cx}" y1="${bot}" x2="${cx}" y2="${callY1 - 2}" stroke="${C.muted}" stroke-width="0.4" stroke-dasharray="2 2"/>`;
+      layerCallouts += `<text x="${cx}" y="${callY1}" font-size="9" text-anchor="middle" fill="${C.fill}" font-weight="600">${L.label}</text>`;
+      layerCallouts += `<text x="${cx}" y="${callY2}" font-size="8" text-anchor="middle" fill="${C.muted}">${L.sub}</text>`;
       x += L.w;
     }
     const xEnd = x;
-    dimChain += `<line x1="${xEnd}" y1="${bot + 12}" x2="${xEnd}" y2="${bot + 26}" stroke="${C.muted}" stroke-width="0.6"/>`;
-    dimChain += `<line x1="40" y1="${bot + 20}" x2="${xEnd}" y2="${bot + 20}" stroke="${C.accent}" stroke-width="1" marker-start="url(#arrowAcc)" marker-end="url(#arrowAcc)"/>`;
+    dimTicks += `<line x1="${xEnd}" y1="${bot + 4}" x2="${xEnd}" y2="${bot + 14}" stroke="${C.muted}" stroke-width="0.6"/>`;
+    // Total dimension arrow at the very bottom
+    const totalDimY = H - 18;
+    const totalThick = layers.reduce((s, L, i) => s + ([12, 110, 50, thickness_mm, 110, 12][i]), 0);
+    const totalArrow = `
+      <line x1="${leftPad}" y1="${totalDimY}" x2="${xEnd}" y2="${totalDimY}" stroke="${C.accent}" stroke-width="1" marker-start="url(#arrowAcc)" marker-end="url(#arrowAcc)"/>
+      <text x="${(leftPad + xEnd)/2}" y="${totalDimY - 4}" font-size="10" text-anchor="middle" fill="${C.accent}" font-weight="700">total ${totalThick} mm</text>`;
+    // R-value callout — placed in the reserved right column, never clipped
+    const cardX = xEnd + gap;
+    const cardY = top + 10;
+    const cardH = 86;
+    const card = `
+      <rect x="${cardX}" y="${cardY}" width="${cardW}" height="${cardH}" rx="8" fill="rgba(0,0,0,.45)" stroke="${C.accent}" stroke-width="1.2"/>
+      <text x="${cardX + cardW/2}" y="${cardY + 24}" font-size="11" text-anchor="middle" fill="${C.muted}" font-weight="600">R-VALUE</text>
+      <text x="${cardX + cardW/2}" y="${cardY + 48}" font-size="22" text-anchor="middle" fill="${C.accent}" font-weight="800">${R}</text>
+      <text x="${cardX + cardW/2}" y="${cardY + 64}" font-size="9" text-anchor="middle" fill="${C.muted}">m²·K/W</text>
+      <text x="${cardX + cardW/2}" y="${cardY + 80}" font-size="9" text-anchor="middle" fill="${C.fill}">${(productName || '').slice(0, 22)}</text>`;
     return svgWrap(`
+      <!-- outside / inside markers -->
+      <text x="${leftPad}" y="${top - 22}" font-size="10" fill="${C.muted}">← outside</text>
+      <text x="${xEnd}"    y="${top - 22}" font-size="10" text-anchor="end" fill="${C.muted}">inside →</text>
+      <line x1="${leftPad}" y1="${top - 14}" x2="${xEnd}" y2="${top - 14}" stroke="${C.muted}" stroke-width="0.5" stroke-dasharray="2 3"/>
       ${parts}
-      ${labels}
-      ${dimChain}
-      <!-- outside / inside arrows -->
-      <text x="40" y="${top - 10}" font-size="10" fill="${C.muted}">← outside</text>
-      <text x="${xEnd}" y="${top - 10}" font-size="10" text-anchor="end" fill="${C.muted}">inside →</text>
-      <!-- temperature gradient indicator -->
-      <line x1="40" y1="${top + 6}" x2="${xEnd}" y2="${top + 6}" stroke="url(#hatchSteel)" stroke-width="0" />
-      <line x1="40" y1="${top - 4}" x2="${xEnd}" y2="${top - 4}" stroke="${C.muted}" stroke-width="0.5" stroke-dasharray="2 3"/>
-      <!-- product / R-value callout -->
-      <rect x="${xEnd + 14}" y="${top + 30}" width="120" height="60" rx="6" fill="rgba(0,0,0,.4)" stroke="${C.accent}" stroke-width="1"/>
-      <text x="${xEnd + 74}" y="${top + 50}" font-size="11" text-anchor="middle" fill="${C.accent}" font-weight="700">R = ${R}</text>
-      <text x="${xEnd + 74}" y="${top + 68}" font-size="9" text-anchor="middle" fill="${C.muted}">m²·K/W</text>
-      <text x="${xEnd + 74}" y="${top + 84}" font-size="9" text-anchor="middle" fill="${C.fill}">${productName}</text>
-      <!-- total thickness -->
-      <text x="${(40 + xEnd)/2}" y="${bot + 40}" font-size="11" text-anchor="middle" fill="${C.accent}" font-weight="700">total ${(xEnd - 40)} px buildup</text>
+      ${dimTicks}
+      ${layerCallouts}
+      ${totalArrow}
+      ${card}
     `, W, H);
   }
 
@@ -2000,9 +2125,9 @@ window.NHBRC_CALCULATORS = (function () {
 
   function pipeView(escapeHtml, body) {
     const matOpts = Object.entries(PIPE_MATERIALS).map(([k, v], i) =>
-      `<option value="${k}"${i===0?' selected':''}>${v.label}</option>`).join('');
+      `<option value="${k}"${i===0?' selected':''}>${v.shortLabel || v.label}</option>`).join('');
     const purpOpts = Object.entries(PIPE_PURPOSE).map(([k, v], i) =>
-      `<option value="${k}"${i===0?' selected':''}>${v.label}</option>`).join('');
+      `<option value="${k}"${i===0?' selected':''}>${v.shortLabel || v.label}</option>`).join('');
     body.innerHTML = `
       <div class="calc-form">
         ${field('Pipe material', `<select id="piMat">${matOpts}</select>`)}
