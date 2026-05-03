@@ -739,6 +739,20 @@ figcaption {
 .ss-item strong { font-size: 18px; color: #6fdc9a; }
 .ss-lbl { color: var(--muted); font-size: 11px; }
 
+/* Per-section visual signatures — each top-level page has its own mood
+   while staying within the brand. Body[data-section] is set in render(). */
+body[data-section="learn"] .topbar { background: linear-gradient(90deg, #d97a99 0%, #e891ad 100%); }
+body[data-section="tools"] .topbar { background: linear-gradient(90deg, #3a5b8a 0%, #5a7eb0 100%); }
+body[data-section="library"] .topbar { background: linear-gradient(90deg, #b87a4a 0%, #d09870 100%); }
+body[data-section="me"] .topbar { background: linear-gradient(90deg, #7a4f8a 0%, #a878b8 100%); }
+body[data-section="unlock"] .topbar { background: linear-gradient(90deg, #8a4f00 0%, #f5b800 100%); }
+
+/* Each section's bg overlay tint nudges the photo toward the brand mood */
+body[data-section="learn"]::after { background: linear-gradient(180deg, rgba(48,16,32,.55) 0%, rgba(20,8,16,.85) 60%, rgba(12,6,12,.94) 100%); }
+body[data-section="tools"]::after { background: linear-gradient(180deg, rgba(16,28,48,.55) 0%, rgba(8,16,28,.85) 60%, rgba(6,12,20,.94) 100%); }
+body[data-section="library"]::after { background: linear-gradient(180deg, rgba(48,32,16,.55) 0%, rgba(28,18,10,.85) 60%, rgba(20,12,8,.94) 100%); }
+body[data-section="me"]::after { background: linear-gradient(180deg, rgba(32,16,48,.55) 0%, rgba(18,10,28,.85) 60%, rgba(12,8,20,.94) 100%); }
+
 /* Rotating non-copyright (Pexels CC0) construction photo background */
 @keyframes bg-rotate {
   0%   { background-image: url('bg/construction-site.jpg'); }
@@ -808,16 +822,43 @@ body::after {
 }
 .bt-chev { opacity: .4; font-size: 24px; flex: 0 0 auto; }
 
-/* Compact one-line stats */
+/* Compact one-line stats with subtle entrance animation */
 .status-line {
   display: flex; align-items: center; justify-content: center;
   gap: 8px; flex-wrap: wrap;
   font-size: 13px;
   color: var(--muted);
-  padding: 8px 4px 4px;
+  padding: 10px 14px;
+  background: rgba(217,122,153,.06);
+  border: 1px solid rgba(217,122,153,.18);
+  border-radius: 14px;
+  margin: 4px 0 12px;
+  animation: fadeUp 0.5s ease-out;
 }
-.status-line strong { color: #6fdc9a; font-weight: 700; }
+.status-line strong { color: #f5c4d3; font-weight: 700; }
 .status-line .dot { opacity: .4; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+body[data-section="learn"] .qa-card.primary {
+  background: linear-gradient(135deg, rgba(217,122,153,.30), rgba(232,145,173,.18));
+  border-color: rgba(217,122,153,.55);
+  position: relative; overflow: hidden;
+}
+body[data-section="learn"] .qa-card.primary::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,.08) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+  pointer-events: none;
+}
+body[data-section="learn"] .big-tile { animation: fadeUp 0.45s ease-out backwards; }
+body[data-section="learn"] .big-tile:nth-child(2) { animation-delay: 0.06s; }
+body[data-section="learn"] .big-tile:nth-child(3) { animation-delay: 0.12s; }
+body[data-section="learn"] .big-tile:nth-child(4) { animation-delay: 0.18s; }
+body[data-section="learn"] .big-tile:nth-child(5) { animation-delay: 0.24s; }
 
 /* Library expandable sections */
 .lib-details {
@@ -1018,7 +1059,12 @@ body::after {
   color: var(--ink, #e8eee9);
   font-family: inherit;
 }
-.calc-field input:focus, .calc-field select:focus { outline: 2px solid #0b6e3f; outline-offset: 1px; }
+.calc-field input:focus, .calc-field select:focus { outline: 2px solid var(--green); outline-offset: 1px; }
+/* Force dropdown option contrast — browsers use system colours otherwise, killing dark-mode readability */
+select option, .auth-form select option, .calc-field select option {
+  background: #1a1f1c;
+  color: #e8eee9;
+}
 .calc-out {
   display: grid; gap: 4px;
   background: var(--surface);

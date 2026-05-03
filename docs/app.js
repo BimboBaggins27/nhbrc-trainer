@@ -1356,23 +1356,56 @@
     backBtn.classList.add('hidden');
     setActiveTab('tools');
 
-    let active = (route.current.payload?.section) || 'calc';
+    let active = (route.current.payload?.section) || null;
     function render() {
-      view.innerHTML = `
-        <div class="filter-row" style="margin-bottom:10px">
-          <button class="chip-btn ${active==='calc'?'active':''}" data-s="calc">🧮 Calculators</button>
-          <button class="chip-btn ${active==='boq'?'active':''}" data-s="boq">📋 Bill of Quantities</button>
-          <button class="chip-btn ${active==='forms'?'active':''}" data-s="forms">📄 Forms</button>
-          <button class="chip-btn ${active==='checks'?'active':''}" data-s="checks">✅ Inspections</button>
-        </div>
-        <div id="toolsBody"></div>`;
-      view.querySelectorAll('.chip-btn').forEach(b => b.addEventListener('click', () => { active = b.dataset.s; render(); }));
+      if (!active) return renderHub();
+      view.innerHTML = `<div id="toolsBody"></div>`;
       const body = view.querySelector('#toolsBody');
       if (active === 'calc')   return window.NHBRC_CALCULATORS && window.NHBRC_CALCULATORS.view(escapeHtml, body);
       if (active === 'boq')    return window.NHBRC_CALCULATORS && window.NHBRC_CALCULATORS.boqView(escapeHtml, body);
       if (active === 'forms')  return formsView(body);
       if (active === 'checks') return checklistsView(body);
     }
+    function renderHub() {
+      // Tools landing: 4 big tiles that drill into each tool family
+      const calcCount = 21;
+      const boq = (function(){ try { return JSON.parse(localStorage.getItem('nhbrc.boq.v1') || '{}'); } catch { return {}; } })();
+      const boqItems = Object.values(boq?.projects || {}).reduce((n, p) => n + (p.items||[]).length, 0);
+      backBtn.classList.add('hidden');
+      view.innerHTML = `
+        <div class="hero" style="background:linear-gradient(135deg,#3a5b8a,#5a7eb0);color:#fff;padding:18px 20px;border-radius:16px;margin:8px 0 14px">
+          <h2 style="margin:0">🛠 On-site toolkit</h2>
+          <p style="margin:4px 0 0;opacity:.92">Calculators, document generators, and your project's bill of quantities.</p>
+        </div>
+        <a class="big-tile" data-s="calc">
+          <div class="bt-icon">🧮</div>
+          <div class="bt-text"><div class="bt-title">Calculators</div><div class="bt-sub">${calcCount} live tools — bricks, concrete, beams, stairs, pipe flow, cube tests…</div></div>
+          <div class="bt-chev">›</div>
+        </a>
+        <a class="big-tile" data-s="boq">
+          <div class="bt-icon">📋</div>
+          <div class="bt-text"><div class="bt-title">Bill of Quantities</div><div class="bt-sub">${boqItems} item${boqItems===1?'':'s'} saved across your projects · auto-totals · PDF export</div></div>
+          <div class="bt-chev">›</div>
+        </a>
+        <a class="big-tile" data-s="forms">
+          <div class="bt-icon">📄</div>
+          <div class="bt-text"><div class="bt-title">SANS 10400-A Forms</div><div class="bt-sub">Forms 1, 2, 3, 4 — fill, generate signed PDF</div></div>
+          <div class="bt-chev">›</div>
+        </a>
+        <a class="big-tile" data-s="checks">
+          <div class="bt-icon">✅</div>
+          <div class="bt-text"><div class="bt-title">Inspection checklists</div><div class="bt-sub">Foundation · DPC · Slab · Roof · Drains · Completion + combined project file</div></div>
+          <div class="bt-chev">›</div>
+        </a>`;
+      view.querySelectorAll('[data-s]').forEach(el => el.addEventListener('click', () => { active = el.dataset.s; backBtn.classList.remove('hidden'); render(); }));
+    }
+    // Wire back-button to return to the hub when in a sub-tool
+    const oldBackHandler = backBtn.onclick;
+    backBtn.onclick = (e) => {
+      if (route.current.name === 'tools' && active) { active = null; render(); return; }
+      if (oldBackHandler) oldBackHandler.call(backBtn, e);
+      else route.back();
+    };
     render();
   }
 
@@ -1728,6 +1761,23 @@
     if (A && !A.isAuthenticated() && !PUBLIC_ROUTES.has(name)) {
       return viewLanding();
     }
+    // Show the topbar back button on every sub-page (anything that isn't
+    // a top-level tab or the unauthenticated gate).
+    const TOP_TABS = new Set(['home','tools','library','me','landing','login','signup','verify']);
+    if (TOP_TABS.has(name)) backBtn.classList.add('hidden');
+    else backBtn.classList.remove('hidden');
+    // Per-section visual signature — unique accent + hero gradient + bg tint
+    // per top-level route, while staying within the brand. Sub-routes keep
+    // their parent tab's signature so the user feels rooted.
+    const sectionMap = {
+      home: 'learn', module: 'learn', 'modules-list': 'learn',
+      glossary: 'learn', quizlist: 'learn', quiz: 'learn',
+      master: 'learn', mock: 'learn', about: 'learn',
+      tools: 'tools', library: 'library', article: 'library',
+      me: 'me', admin: 'me', legal: 'me', privacy: 'me', progress: 'me',
+      unlock: 'unlock',
+    };
+    document.body.dataset.section = sectionMap[name] || 'default';
     if (name === 'landing') return viewLanding();
     if (name === 'login')   return viewLogin();
     if (name === 'signup')  return viewSignup();

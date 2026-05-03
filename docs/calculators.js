@@ -1071,10 +1071,19 @@ window.NHBRC_CALCULATORS = (function () {
   function svgWrap(content, w = 400, h = 240) {
     return `<svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:520px;display:block;margin:8px auto;background:#0c1a13;border:1px solid rgba(255,255,255,.08);border-radius:10px">${content}</svg>`;
   }
+  // Diagram palette — match brand (pink) + realistic material colours.
+  // Strong-contrast accent for dimensions / labels: pink. Realistic fills
+  // for materials. All chosen to read clearly on the dark canvas (#0c1a13).
   const C = {
-    fill: '#cfd8d4', soil: '#7a4f2b', sky: 'rgba(255,255,255,.04)',
-    accent: '#6fdc9a', warn: '#f5d56a', red: '#ff9b87',
-    ink: '#e8eee9', muted: '#9aa6a0', dim: 'rgba(255,255,255,.18)',
+    fill: '#cfd8d4',          // concrete / generic surface
+    soil: '#7a4f2b',          // earth fill
+    accent: '#f5c4d3',        // brand pink — labels, dimensions
+    accentDark: '#d97a99',    // brand pink darker
+    warn: '#f5d56a',          // yellow (force / warning)
+    red: '#ff9b87',           // red-coral (fail / wrong)
+    ink: '#e8eee9',           // body text on dark
+    muted: '#aab0ad',         // dim labels
+    dim: 'rgba(255,255,255,.18)',
   };
 
   function drawStairs({ rise_mm, going_mm, risers }) {
@@ -1256,13 +1265,16 @@ window.NHBRC_CALCULATORS = (function () {
     title = '',
   }) {
     const W = 460, H = 280;
-    // pick a scale that fits all 3 dimensions on the canvas
     const a = 30 * Math.PI / 180;
     const cos = Math.cos(a), sin = Math.sin(a);
-    const need_w = length_mm * cos + depth_mm * cos;
-    const need_h = height_mm + length_mm * sin + depth_mm * sin;
-    const scale = Math.min((W - 80) / need_w, (H - 70) / need_h);
-    const L = length_mm * scale, Hgt = height_mm * scale, D = depth_mm * scale;
+    // Independent per-axis scale so thin walls / long slabs stay readable.
+    // Each axis gets a sensible visual share of the canvas, with floors so
+    // very small dimensions don't disappear.
+    const maxL = length_mm, maxH = height_mm, maxD = depth_mm;
+    const Lpx = Math.max(60, Math.min(280, maxL * 0.04));     // 60..280 px
+    const Hpx = Math.max(50, Math.min(160, maxH * 0.045));    // 50..160 px
+    const Dpx = Math.max(28, Math.min(110, maxD * 0.18));     // 28..110 px (depth always ≥28 so wall thickness is visible)
+    const L = Lpx, Hgt = Hpx, D = Dpx;
     // Origin: bottom-front-left corner of the front face
     const ox = 60, oy = H - 30 - D * sin;
     // Front face corners
@@ -1659,10 +1671,22 @@ window.NHBRC_CALCULATORS = (function () {
       const cur = s.projects[s.current];
       const totals = aggregate(cur.items);
       container.innerHTML = `
-        <div class="hero" style="background:linear-gradient(135deg,#d97a99,#e891ad)">
+        <div class="hero" style="background:linear-gradient(135deg,#3a8a5a,#6aaa7a);color:#fff">
           <h2>📋 Bill of Quantities</h2>
           <p>${cur.items.length} item${cur.items.length===1?'':'s'} in <strong>${escapeHtml(cur.name)}</strong></p>
         </div>
+
+        ${cur.items.length === 0 ? `
+        <div class="callout" style="background:rgba(58,138,90,.10);border-color:rgba(58,138,90,.45)">
+          <strong>How does the BoQ work?</strong>
+          <ol style="margin:6px 0 0 18px;padding:0;font-size:13px">
+            <li>Pick a calculator (Bricks, Concrete, Rebar…) and enter your numbers.</li>
+            <li>At the bottom of the result, tap <strong>+ Add to BoQ</strong>.</li>
+            <li>Come back here. Items list at the top, auto-totals below.</li>
+            <li>Run multiple projects — the dropdown switches between them. <strong>+ New</strong> creates a project, <strong>Rename</strong> renames the current one.</li>
+            <li>Tap <strong>📄 Export BoQ as PDF</strong> for a printable bill.</li>
+          </ol>
+        </div>` : ''}
 
         <div class="calc-form" style="grid-template-columns:1fr auto auto auto">
           <label class="calc-field"><span>Project</span>
@@ -1673,7 +1697,7 @@ window.NHBRC_CALCULATORS = (function () {
           <button class="btn secondary" id="boqDel">Delete</button>
         </div>
 
-        ${cur.items.length === 0 ? '<div class="empty">No items yet. Use any calculator and tap <strong>+ Add to BoQ</strong>.</div>' : `
+        ${cur.items.length === 0 ? '<div class="empty">No items yet — your saved calculations will appear here.</div>' : `
         <div class="boq-list">
           ${cur.items.map(it => `
             <div class="boq-item" data-id="${it.id}">
