@@ -66,6 +66,23 @@ window.NHBRC_CALCULATORS = (function () {
   const MORTAR_PER_M2 = { 'half': 0.025, 'one': 0.045, 'oneandhalf': 0.065 };
   // Class II mortar (1:1:6) per m³
   const MORTAR_MIX_II = { cement_kg: 280, lime_kg: 100, sand_m3: 1.5 };
+  // SANS 2001-CM2 mortar classes (per m³ of mortar).
+  const MORTAR_CLASSES = {
+    I:   { label: 'Class I — 1:¼:3 cement:lime:sand (high strength)',         cement_kg: 460, lime_kg: 60,  sand_m3: 1.05, use: 'Engineering brickwork, retaining walls, manholes, below-DPC.' },
+    II:  { label: 'Class II — 1:½:4½ (1:1:6 traditional, standard external)',  cement_kg: 280, lime_kg: 100, sand_m3: 1.50, use: 'Standard external load-bearing walls. Most domestic work.' },
+    III: { label: 'Class III — 1:1:6 (low strength, internal only)',           cement_kg: 220, lime_kg: 110, sand_m3: 1.55, use: 'Internal non-load-bearing partitions. Plastered work.' },
+  };
+  // South African brick types (SANS 227 — clay; SANS 1215 — concrete masonry units).
+  const BRICK_TYPES = {
+    NFP:    { label: 'NFP — Non-Facing Plaster (stock brick, plastered)',  std: 'SANS 227', size_mm: '222×106×73',  notes: 'Cheapest. Always plastered. Min 7 MPa.' },
+    NFX:    { label: 'NFX — Non-Facing Extra (high strength, plastered)',  std: 'SANS 227', size_mm: '222×106×73',  notes: 'Higher strength than NFP. Min 14 MPa. Below-DPC.' },
+    FBA:    { label: 'FBA — Face Brick Aesthetic',                           std: 'SANS 227', size_mm: '222×106×73',  notes: 'Visible finish. Tolerance ±2 mm. Colour variation allowed.' },
+    FBS:    { label: 'FBS — Face Brick Standard',                            std: 'SANS 227', size_mm: '222×106×73',  notes: 'Visible finish. Tighter tolerance ±2 mm. Min 17 MPa.' },
+    FBX:    { label: 'FBX — Face Brick Extra (premium)',                     std: 'SANS 227', size_mm: '222×106×73',  notes: 'Highest finish + dimensional grade. Min 21 MPa.' },
+    Maxi:   { label: 'Maxi brick (cement, plastered)',                       std: 'SANS 1215', size_mm: '290×140×90',  notes: 'Concrete. ~half the bricks per m². Plastered. Common in RDP.' },
+    Stock_M:{ label: 'Stock-brick (cement, plastered)',                      std: 'SANS 1215', size_mm: '222×106×73',  notes: 'Concrete. Cheaper than clay NFP. Plastered.' },
+    Paver:  { label: 'Paver block (clay or concrete)',                       std: 'SANS 1058', size_mm: '200×100×50/65', notes: 'Driveways/pedestrian. Not for walls.' },
+  };
 
   // Concrete by grade — per m³
   const CONCRETE_MIX = {
@@ -94,7 +111,24 @@ window.NHBRC_CALCULATORS = (function () {
   function lapLength_mm(diaMm) { return Math.round(40 * diaMm); }
 
   // Paint coverage (m² per L per coat)
-  const PAINT_COV = { pva: 7, enamel: 10, primer: 9, plaster_primer: 6, roof: 4 };
+  // Plascon-only paint catalog (SA market — credentialed product range).
+  // Coverage values from Plascon technical data sheets (m²/L, smooth substrate).
+  const PLASCON = {
+    wall_and_all:    { label: 'Plascon Wall & All',                    use: 'Interior + exterior PVA, 5-yr',          cov: 8,  sheen: 'matte',     base: 'water', notes: 'General-purpose. Self-priming on bare plaster after Plaster Primer.' },
+    double_velvet:   { label: 'Plascon Double Velvet',                 use: 'Premium interior PVA, washable',         cov: 9,  sheen: 'velvet',    base: 'water', notes: 'Luxury matte interior. Not for kitchens/bathrooms — use Cashmere.' },
+    cashmere:        { label: 'Plascon Cashmere',                      use: 'Low-sheen interior, kitchens/bathrooms', cov: 8,  sheen: 'low-sheen', base: 'water', notes: 'Mould-resistant. Wipeable. Acrylic.' },
+    velvaglo:        { label: 'Plascon Velvaglo',                      use: 'Water-based enamel — trim/doors',        cov: 12, sheen: 'sheen',     base: 'water', notes: 'Replaces oil-based gloss. Non-yellowing. Apply over Universal Undercoat.' },
+    velvaglo_nxt:    { label: 'Plascon Velvaglo NXT',                  use: 'Premium water-based enamel',             cov: 12, sheen: 'sheen',     base: 'water', notes: 'Faster recoat (4 hr). Tougher film than Velvaglo.' },
+    micatex:         { label: 'Plascon Micatex',                       use: 'Textured exterior, 10-yr',               cov: 3.5,sheen: 'textured',  base: 'water', notes: 'Bridges hairline cracks. Mica-flake finish. Apply 2 coats on Plaster Primer.' },
+    nuroof_cool:     { label: 'Plascon Nuroof Cool',                   use: 'Cool-roof acrylic, IBR/tile',            cov: 4,  sheen: 'matte',     base: 'water', notes: 'Solar-reflective. Apply on Galvanised Iron Primer (new sheet) or directly on weathered.' },
+    roofguard:       { label: 'Plascon Roofguard',                     use: 'Standard roof acrylic',                  cov: 4,  sheen: 'low-sheen', base: 'water', notes: 'IBR, corrugated, tile. 2 coats over Galv Iron Primer for new metal.' },
+    plaster_primer:  { label: 'Plascon Plaster Primer',                use: 'Solvent-based primer for new plaster',   cov: 6,  sheen: 'flat',      base: 'solvent', notes: 'Mandatory on bare plaster (>28 day cure). Penetrates and seals.' },
+    bonding_liquid:  { label: 'Plascon Bonding Liquid Primer',         use: 'Universal water-based primer',           cov: 7,  sheen: 'flat',      base: 'water', notes: 'Bonds to PVA, glossy, fibre-cement. Use when topcoat is water-based.' },
+    universal_undercoat: { label: 'Plascon Universal Undercoat',       use: 'Undercoat for Velvaglo / enamels',       cov: 10, sheen: 'flat',      base: 'water', notes: 'Apply before Velvaglo on bare timber/metal. White only.' },
+    galv_iron_primer:{ label: 'Plascon Galvanised Iron Primer',        use: 'Etch primer for new galv steel',         cov: 8,  sheen: 'flat',      base: 'solvent', notes: 'Mandatory on new galvanised — etches passivation. Then Roofguard / Nuroof.' },
+  };
+  // Backwards-compat: kept for any legacy callers, but PLASCON is the source of truth.
+  const PAINT_COV = Object.fromEntries(Object.entries(PLASCON).map(([k,v]) => [k, v.cov]));
 
   // Bulking factor when soil is excavated (in-situ vol → loose vol)
   const SOIL_BULK = { sand: 1.15, gravel: 1.20, clay: 1.30, rock: 1.50, mixed: 1.25 };
@@ -106,26 +140,90 @@ window.NHBRC_CALCULATORS = (function () {
   const TILE_ADHESIVE_PER_BAG_M2 = 5;
   // Grout per m² for typical 4 mm joint, 8 mm tile thickness ≈ 0.4 kg/m²
   const TILE_GROUT_KG_PER_M2_PER_MM_JOINT = 0.1; // multiply by joint mm
+  // Tile-type → matched TAL adhesive (SA market standard).
+  // Coverage in m² per 20 kg bag at 6 mm notched-trowel application.
+  const TILE_TYPES = {
+    ceramic_glazed: {
+      label: 'Ceramic glazed (wall ≤300×300 / floor ≤450×450)',
+      adhesive: 'TAL Goldstar — standard cement-based',
+      adhesive_m2_per_bag: 5,
+      grout: 'TAL Wallgrout / Floorgrout — sanded 3–10 mm',
+      notes: 'Mix with water only. Ribbed back of tile faces down. Not suitable for fully-immersed.'
+    },
+    porcelain: {
+      label: 'Porcelain (low absorption, all formats)',
+      adhesive: 'TAL Tradeset Plus — flexible C2TE',
+      adhesive_m2_per_bag: 4.5,
+      grout: 'TAL Sanded Floorgrout (≥3 mm joint)',
+      notes: 'Porcelain absorbs <0.5% — needs polymer-modified flexible adhesive. Back-butter large formats.'
+    },
+    porcelain_large: {
+      label: 'Large-format porcelain (>600 mm any side)',
+      adhesive: 'TAL Megaset / Tradeset Plus — C2TE S1',
+      adhesive_m2_per_bag: 4,
+      grout: 'TAL Sanded Floorgrout',
+      notes: 'Solid bedding required (≥90% coverage). Use 10–12 mm notched trowel. Back-butter the tile.'
+    },
+    natural_stone: {
+      label: 'Natural stone (marble / granite / slate / travertine)',
+      adhesive: 'TAL Tradeset Plus White — non-staining flexible',
+      adhesive_m2_per_bag: 4.5,
+      grout: 'TAL Wallgrout White (no pigments — staining risk)',
+      notes: 'White adhesive prevents grey shadow through translucent stone. Seal tile before grouting.'
+    },
+    mosaic: {
+      label: 'Mosaic (≤50×50 mm chips, sheet-mounted)',
+      adhesive: 'TAL Goldstar (paper-faced) / TAL Tradeset (mesh-back)',
+      adhesive_m2_per_bag: 5.5,
+      grout: 'TAL Wallgrout — fine joint',
+      notes: 'Use 3–4 mm notched trowel. Lay sheets level — beat in with a cork float.'
+    },
+    quarry: {
+      label: 'Quarry / terracotta (high absorption, unglazed)',
+      adhesive: 'TAL Goldstar — standard cement-based',
+      adhesive_m2_per_bag: 5,
+      grout: 'TAL Floorgrout — sanded',
+      notes: 'Pre-wet tiles to control absorption. Seal after grouting (oils + water).'
+    },
+    pool_external: {
+      label: 'Pool / fully-submerged / external',
+      adhesive: 'TAL Tradeset Plus + TAL Bond admix',
+      adhesive_m2_per_bag: 4,
+      grout: 'TAL Latex Sanded — admix-modified',
+      notes: 'Substrate must be tanked. Use C2TE S1/S2 flexible. Allow 21-day cure before filling pool.'
+    },
+  };
 
   // ---------- Helpers ----------
   function bagsCeil(kg) { return Math.ceil(kg / CEMENT_BAG_KG); }
   function pretty(n, places = 2) { return (+n).toFixed(places); }
 
   // ---------- Tool: Bricks + mortar ----------
-  function calcBrickMortar({ length_m, height_m, wallType, wastePct = 5 }) {
+  function calcBrickMortar({ length_m, height_m, wallType, wastePct = 5, brickType = 'NFP', mortarClass = 'II' }) {
     const area = length_m * height_m;
-    const bpm2 = BRICKS_PER_M2[wallType], mpm2 = MORTAR_PER_M2[wallType];
+    let bpm2 = BRICKS_PER_M2[wallType];
+    const mpm2 = MORTAR_PER_M2[wallType];
     if (!bpm2) return { error: 'Pick a wall type.' };
+    // Maxi-brick = ~half the bricks per m² for the same wall thickness.
+    if (brickType === 'Maxi') bpm2 = Math.round(bpm2 * 0.55);
     const bricks = Math.ceil(area * bpm2 * (1 + wastePct / 100));
     const mortar_m3 = +(area * mpm2).toFixed(3);
-    const cement_kg = mortar_m3 * MORTAR_MIX_II.cement_kg;
+    const mix = MORTAR_CLASSES[mortarClass] || MORTAR_CLASSES.II;
+    const cement_kg = mortar_m3 * mix.cement_kg;
+    const brick = BRICK_TYPES[brickType] || BRICK_TYPES.NFP;
     return {
       area_m2: +area.toFixed(2),
       bricks, mortar_m3,
       cement_bags: bagsCeil(cement_kg),
       cement_kg: +cement_kg.toFixed(0),
-      lime_kg: +(mortar_m3 * MORTAR_MIX_II.lime_kg).toFixed(0),
-      sand_m3: +(mortar_m3 * MORTAR_MIX_II.sand_m3).toFixed(2),
+      lime_kg: +(mortar_m3 * mix.lime_kg).toFixed(0),
+      sand_m3: +(mortar_m3 * mix.sand_m3).toFixed(2),
+      mortar_label: mix.label,
+      mortar_use:   mix.use,
+      brick_label:  brick.label,
+      brick_size:   brick.size_mm,
+      brick_std:    brick.std,
+      brick_notes:  brick.notes,
     };
   }
 
@@ -197,23 +295,35 @@ window.NHBRC_CALCULATORS = (function () {
   }
 
   // ---------- Tool: Tiling ----------
-  function calcTiling({ area_m2, tile_w_mm, tile_h_mm, joint_mm = 4, wastePct = 10 }) {
+  function calcTiling({ area_m2, tile_w_mm, tile_h_mm, joint_mm = 4, wastePct = 10, tileType = 'ceramic_glazed' }) {
     if (!area_m2 || !tile_w_mm || !tile_h_mm) return { error: 'Fill in the dimensions.' };
+    const t = TILE_TYPES[tileType] || TILE_TYPES.ceramic_glazed;
     const tile_area_m2 = (tile_w_mm + joint_mm) * (tile_h_mm + joint_mm) / 1e6;
     const tilesPerM2 = 1 / tile_area_m2;
     const tiles = Math.ceil(area_m2 * tilesPerM2 * (1 + wastePct / 100));
-    const adhesive_bags = Math.ceil(area_m2 / TILE_ADHESIVE_PER_BAG_M2);
+    const adhesive_bags = Math.ceil(area_m2 / t.adhesive_m2_per_bag);
     const grout_kg = +(area_m2 * TILE_GROUT_KG_PER_M2_PER_MM_JOINT * joint_mm).toFixed(1);
-    return { area_m2, tilesPerM2: +tilesPerM2.toFixed(1), tiles, adhesive_bags, grout_kg };
+    return {
+      area_m2, tilesPerM2: +tilesPerM2.toFixed(1), tiles,
+      adhesive_bags, grout_kg,
+      adhesive_name: t.adhesive, grout_name: t.grout, notes: t.notes,
+      tile_label: t.label,
+    };
   }
 
   // ---------- Tool: Paint ----------
   function calcPaint({ area_m2, coats, paintType }) {
-    const cov = PAINT_COV[paintType] || PAINT_COV.pva;
+    const product = PLASCON[paintType] || PLASCON.wall_and_all;
+    const cov = product.cov;
     const litres = area_m2 * coats / cov;
     const tins5L = Math.ceil(litres / 5);
     const tins20L = Math.ceil(litres / 20);
-    return { area_m2, coats, paintType, litres: +litres.toFixed(1), tins5L, tins20L };
+    return {
+      area_m2, coats, paintType,
+      litres: +litres.toFixed(1), tins5L, tins20L,
+      product_label: product.label, product_use: product.use,
+      sheen: product.sheen, base: product.base, notes: product.notes, coverage_m2_per_L: cov,
+    };
   }
 
   // ---------- Tool: Excavation ----------
@@ -360,7 +470,24 @@ window.NHBRC_CALCULATORS = (function () {
   }
 
   // ---------- Tool: Pipe flow / drainage capacity (Manning's) ----------
-  function calcPipeFlow({ diameter_mm, slope_pct = 1, n = 0.013 }) {
+  // Pipe materials available on the SA market — Manning n + standards + use.
+  const PIPE_MATERIALS = {
+    upvc_sewer:    { label: 'uPVC sewer (SANS 791, Class 34)',          n: 0.011, std: 'SANS 791',  use: 'Underground foul + storm drainage. Solvent-weld socket joints.', diameters: [50,75,110,160,200,250,315], min_slope_note: 'Foul Ø100: 1:60 (1.67%). Storm Ø100: 1:100. Larger Ø use 1:120 minimum.' },
+    upvc_pressure: { label: 'uPVC pressure (SANS 966-1, Class 6/9/12/16)', n: 0.010, std: 'SANS 966-1', use: 'Cold pressurised water mains. Class = max bar (e.g. Class 12 = 1.2 MPa).', diameters: [25,32,40,50,63,75,90,110,160], min_slope_note: 'Pressure pipe — slope is for drainage, not gravity flow.' },
+    hdpe:          { label: 'HDPE (SANS 4427, PE100, PN10/16)',          n: 0.009, std: 'SANS 4427',  use: 'Buried pressure water + gas. Butt-fused or electrofusion joints.', diameters: [20,25,32,50,63,90,110,160,225,315], min_slope_note: 'Pressure pipe; slope for venting/draining.' },
+    concrete:      { label: 'Concrete pipe (SANS 677)',                  n: 0.013, std: 'SANS 677',   use: 'Stormwater + sewer mains ≥Ø300. Spigot-and-socket / ogee joint.', diameters: [300,375,450,525,600,750,900,1050,1200], min_slope_note: 'Storm: 1:120 typical for Ø450. Sewer: design for ≥0.6 m/s self-cleansing.' },
+    cast_iron:     { label: 'Cast iron (CISP, SANS 746)',                n: 0.013, std: 'SANS 746',   use: 'Above-ground soil + waste in commercial. Push-fit gasket joints.', diameters: [50,75,100,150,200,250], min_slope_note: 'Foul Ø100: 1:60. Smooth bore — same gradients as uPVC.' },
+    galv_steel:    { label: 'Galvanised steel (SANS 62)',                n: 0.014, std: 'SANS 62',    use: 'Hot/cold water above ground (legacy). Threaded BSP joints.', diameters: [15,20,25,32,40,50,65,80,100], min_slope_note: 'Pressure pipe; falls only for drainage.' },
+    copper:        { label: 'Copper (SANS 460, Type B)',                 n: 0.011, std: 'SANS 460',   use: 'Hot water + gas. Capillary or compression joints.', diameters: [15,22,28,35,42,54], min_slope_note: 'Pressure pipe; falls for venting.' },
+  };
+  // Useful purpose presets that pin slope rules.
+  const PIPE_PURPOSE = {
+    foul:        { label: 'Foul drainage (sewerage)',           min_slope_pct: 1.67, target_v_min: 0.7, target_v_max: 2.5, note: 'Self-cleansing 0.7–2.5 m/s. SANS 10400-P table 1 minimum gradients.' },
+    stormwater:  { label: 'Stormwater drainage',                 min_slope_pct: 1.0,  target_v_min: 0.6, target_v_max: 4.0, note: 'Less aggressive gradient. Velocity to 4 m/s acceptable (no solids).' },
+    soil_vent:   { label: 'Soil vent / waste branch (≤Ø50)',     min_slope_pct: 2.0,  target_v_min: 0.7, target_v_max: 2.5, note: 'Steeper for small bores. Branch ≤3 m before next vent.' },
+    pressure:    { label: 'Pressure water main',                 min_slope_pct: 0,    target_v_min: 0.5, target_v_max: 3.0, note: 'Slope for venting only. Velocity 1.5–2.5 m/s typical for sizing.' },
+  };
+  function calcPipeFlow({ diameter_mm, slope_pct = 1, n = 0.013, purpose = 'foul', material = 'upvc_sewer' }) {
     if (!diameter_mm || !slope_pct) return { error: 'Set diameter + slope.' };
     const d = diameter_mm / 1000;            // m
     const A = Math.PI * (d / 2) ** 2;        // full-pipe area, m²
@@ -369,12 +496,37 @@ window.NHBRC_CALCULATORS = (function () {
     const S = slope_pct / 100;
     const V = (1 / n) * Math.pow(Rh, 2 / 3) * Math.sqrt(S);  // m/s
     const Q = V * A;                         // m³/s
+    const purp = PIPE_PURPOSE[purpose] || PIPE_PURPOSE.foul;
+    const mat = PIPE_MATERIALS[material] || PIPE_MATERIALS.upvc_sewer;
+    let capacity_note;
+    if (purpose === 'pressure') {
+      capacity_note = (V >= purp.target_v_min && V <= purp.target_v_max)
+        ? `✅ ${V.toFixed(2)} m/s within target range ${purp.target_v_min}–${purp.target_v_max} m/s`
+        : `⚠️ ${V.toFixed(2)} m/s outside ${purp.target_v_min}–${purp.target_v_max} m/s — resize`;
+    } else {
+      if (slope_pct < purp.min_slope_pct) {
+        capacity_note = `⚠️ Slope ${slope_pct}% < min ${purp.min_slope_pct}% for ${purp.label.toLowerCase()}`;
+      } else if (V < purp.target_v_min) {
+        capacity_note = `⚠️ Velocity ${V.toFixed(2)} m/s < self-cleansing ${purp.target_v_min} m/s — solids will settle`;
+      } else if (V > purp.target_v_max) {
+        capacity_note = `⚠️ Velocity ${V.toFixed(2)} m/s > ${purp.target_v_max} m/s — pipe scour risk`;
+      } else {
+        capacity_note = `✅ ${V.toFixed(2)} m/s within ${purp.target_v_min}–${purp.target_v_max} m/s · slope ≥ ${purp.min_slope_pct}%`;
+      }
+    }
     return {
       area_m2: +A.toFixed(4),
       velocity_ms: +V.toFixed(2),
       flow_Lps: +(Q * 1000).toFixed(1),
       slope_one_in: +(100 / slope_pct).toFixed(0),
-      capacity_note: V >= 0.6 ? '✅ Self-cleansing (≥ 0.6 m/s)' : '⚠️ Below self-cleansing velocity — risk of solids settling',
+      capacity_note,
+      material_label: mat.label,
+      material_use:   mat.use,
+      material_std:   mat.std,
+      slope_note:     mat.min_slope_note,
+      purpose_label:  purp.label,
+      purpose_note:   purp.note,
+      n_used: n,
     };
   }
 
@@ -524,11 +676,18 @@ window.NHBRC_CALCULATORS = (function () {
   // ----- Per-tool views -----
 
   function brickView(escapeHtml, body) {
+    const brickOpts = Object.entries(BRICK_TYPES)
+      .filter(([k]) => k !== 'Paver')
+      .map(([k, v]) => `<option value="${k}"${k==='NFP'?' selected':''}>${v.label}</option>`).join('');
+    const mortarOpts = Object.entries(MORTAR_CLASSES).map(([k, v]) =>
+      `<option value="${k}"${k==='II'?' selected':''}>${v.label}</option>`).join('');
     body.innerHTML = `
       <div class="calc-form">
         ${field('Wall length (m)', '<input id="bL" type="number" step="0.1" min="0" value="10">')}
         ${field('Wall height (m)', '<input id="bH" type="number" step="0.1" min="0" value="2.7">')}
         ${field('Wall type', '<select id="bT"><option value="half">Half-brick (106 mm)</option><option value="one" selected>One-brick (220 mm)</option><option value="oneandhalf">One-and-a-half (330 mm)</option></select>')}
+        ${field('Brick type', `<select id="bBT">${brickOpts}</select>`)}
+        ${field('Mortar class (SANS 2001-CM2)', `<select id="bMC">${mortarOpts}</select>`)}
         ${field('Waste %', '<input id="bW" type="number" step="1" min="0" value="5">')}
       </div>
       <div id="bDia"></div>
@@ -538,30 +697,43 @@ window.NHBRC_CALCULATORS = (function () {
       const length_m = +body.querySelector('#bL').value;
       const height_m = +body.querySelector('#bH').value;
       const wallType = body.querySelector('#bT').value;
-      const r = calcBrickMortar({ length_m, height_m, wallType, wastePct: +body.querySelector('#bW').value });
+      const brickType = body.querySelector('#bBT').value;
+      const mortarClass = body.querySelector('#bMC').value;
+      const r = calcBrickMortar({
+        length_m, height_m, wallType,
+        wastePct: +body.querySelector('#bW').value,
+        brickType, mortarClass,
+      });
       if (r.error) return body.querySelector('#bOut').innerHTML = `<div class="empty">${escapeHtml(r.error)}</div>`;
-      // Live 3-D wall preview (length × height × wall-thickness)
       const t_mm = wallThicknessFor(wallType);
+      // Face-brick types render warmer; cement bricks render greyer
+      const faceTones = { FBA:['#a04830','#c46850','#7a3320'], FBS:['#a8543a','#c4775a','#7a3a25'], FBX:['#8a3a25','#a85a40','#5e2515'], Maxi:['#9a9a96','#b8b8b4','#7a7a76'], Stock_M:['#a8a8a4','#c4c4c0','#7a7a76'], NFP:['#b87a5a','#d49a76','#7a4f33'], NFX:['#a86a4a','#c08864','#6a4022'] };
+      const tones = faceTones[brickType] || faceTones.NFP;
       body.querySelector('#bDia').innerHTML = drawIsoBox({
         length_mm: length_m * 1000,
         height_mm: height_m * 1000,
         depth_mm: t_mm,
         pattern: 'brick',
-        title: `${length_m} m × ${height_m} m × ${t_mm} mm wall (${r.bricks.toLocaleString()} bricks)`,
-        frontColor: '#b87a5a', topColor: '#d49a76', sideColor: '#7a4f33',
+        title: `${length_m} m × ${height_m} m × ${t_mm} mm wall · ${r.bricks.toLocaleString()} × ${escapeHtml(r.brick_size)} mm`,
+        frontColor: tones[0], topColor: tones[1], sideColor: tones[2],
       });
       body.querySelector('#bOut').innerHTML = `
         <div class="calc-row"><span>Wall area</span><strong>${r.area_m2} m²</strong></div>
-        <div class="calc-row hilite"><span>Bricks needed</span><strong>${r.bricks.toLocaleString()}</strong></div>
-        <div class="calc-row"><span>Mortar volume (1:1:6)</span><strong>${r.mortar_m3} m³</strong></div>
-        <div class="calc-row"><span>Cement</span><strong>${r.cement_bags} × 50 kg bags</strong></div>
+        <div class="calc-row hilite"><span>Bricks needed (${escapeHtml(r.brick_size)} mm)</span><strong>${r.bricks.toLocaleString()}</strong></div>
+        <div class="calc-row"><span>Brick standard</span><strong>${escapeHtml(r.brick_std)}</strong></div>
+        <div class="calc-row"><span>Mortar class</span><strong>${escapeHtml(r.mortar_label)}</strong></div>
+        <div class="calc-row"><span>Mortar volume</span><strong>${r.mortar_m3} m³</strong></div>
+        <div class="calc-row"><span>Cement (${escapeHtml(r.mortar_label.split('—')[0].trim())})</span><strong>${r.cement_bags} × 50 kg bags</strong></div>
         <div class="calc-row"><span>Lime</span><strong>${r.lime_kg} kg</strong></div>
         <div class="calc-row"><span>Sand</span><strong>${r.sand_m3} m³</strong></div>
+        <div class="callout"><strong>Brick:</strong> ${escapeHtml(r.brick_notes)}</div>
+        <div class="callout"><strong>Mortar use:</strong> ${escapeHtml(r.mortar_use)}</div>
+        <div class="meta cite">Source: SANS 227 (clay) / SANS 1215 (concrete masonry) · SANS 2001-CM2 mortar classes</div>
         <div class="actions">${boqButton(
-          `Wall ${length_m}×${height_m}m (${({half:'half-brick',one:'one-brick',oneandhalf:'1½-brick'})[wallType]})`,
+          `Wall ${length_m}×${height_m}m (${brickType} · Class ${mortarClass})`,
           'Bricks & mortar',
-          { length_m, height_m, wallType, t_mm },
-          { bricks: r.bricks, mortar_m3: r.mortar_m3, cement_bags: r.cement_bags, lime_kg: r.lime_kg, sand_m3: r.sand_m3 }
+          { length_m, height_m, wallType, t_mm, brickType, mortarClass },
+          { bricks: r.bricks, mortar_m3: r.mortar_m3, cement_bags: r.cement_bags, lime_kg: r.lime_kg, sand_m3: r.sand_m3, brick: r.brick_label, mortar: r.mortar_label }
         )}</div>`;
       wireBoqButtons(body);
     };
@@ -624,10 +796,11 @@ window.NHBRC_CALCULATORS = (function () {
       if (r.error) return body.querySelector('#cOut').innerHTML = `<div class="empty">${escapeHtml(r.error)}</div>`;
       body.querySelector('#cDia').innerHTML = drawIsoBox({
         length_mm: length_m * 1000,
-        height_mm: depth_m * 1000,    // visualise as a slab — depth becomes the "height" of the box
-        depth_mm: width_m * 1000,
-        title: `${length_m} × ${width_m} × ${depth_m} m · ${r.volume_m3} m³ of ${body.querySelector('#cM').value} MPa concrete`,
-        frontColor: '#a8a8a4', topColor: '#c4c4c0', sideColor: '#7a7a76',
+        height_mm: depth_m * 1000,    // slab thickness = visual height
+        depth_mm: width_m * 1000,     // breadth = receding depth
+        pattern: 'concrete',
+        title: `${length_m} × ${width_m} × ${depth_m} m slab · ${r.volume_m3} m³ of ${body.querySelector('#cM').value} MPa concrete`,
+        frontColor: '#9a9a96', topColor: '#bcbcb6', sideColor: '#6e6e6a',
       });
       body.querySelector('#cOut').innerHTML = `
         <div class="calc-row hilite"><span>Concrete volume (incl. waste)</span><strong>${r.volume_m3} m³</strong></div>
@@ -743,8 +916,11 @@ window.NHBRC_CALCULATORS = (function () {
   }
 
   function tileView(escapeHtml, body) {
+    const tileOpts = Object.entries(TILE_TYPES).map(([k, v], i) =>
+      `<option value="${k}"${i===0?' selected':''}>${v.label}</option>`).join('');
     body.innerHTML = `
       <div class="calc-form">
+        ${field('Tile type', `<select id="tType">${tileOpts}</select>`)}
         ${field('Area (m²)', '<input id="tA" type="number" step="0.5" min="0" value="20">')}
         ${field('Tile width (mm)', '<input id="tW" type="number" step="10" min="0" value="600">')}
         ${field('Tile height (mm)', '<input id="tH" type="number" step="10" min="0" value="600">')}
@@ -755,42 +931,49 @@ window.NHBRC_CALCULATORS = (function () {
       <div id="tOut" class="calc-out"></div>`;
     const compute = () => {
       const area_m2 = +body.querySelector('#tA').value;
+      const tileType = body.querySelector('#tType').value;
       const r = calcTiling({
         area_m2,
         tile_w_mm:+body.querySelector('#tW').value,
         tile_h_mm:+body.querySelector('#tH').value,
         joint_mm:+body.querySelector('#tJ').value,
         wastePct:+body.querySelector('#tWa').value,
+        tileType,
       });
       if (r.error) return body.querySelector('#tOut').innerHTML = `<div class="empty">${escapeHtml(r.error)}</div>`;
       const side_m = Math.sqrt(area_m2 || 1);
       body.querySelector('#tDia').innerHTML = drawIsoBox({
-        length_mm: side_m * 1000, height_mm: side_m * 1000, depth_mm: 80,
+        length_mm: side_m * 1000, height_mm: 80, depth_mm: side_m * 1000,
         pattern: 'tile',
-        title: `Tiled surface ≈ ${side_m.toFixed(1)} × ${side_m.toFixed(1)} m`,
+        title: `Tiled floor ≈ ${side_m.toFixed(1)} × ${side_m.toFixed(1)} m · ${escapeHtml(r.tile_label)}`,
         frontColor: '#dde6ea', topColor: '#eef2f4', sideColor: '#888',
       });
       body.querySelector('#tOut').innerHTML = `
         <div class="calc-row"><span>Tiles per m²</span><strong>${r.tilesPerM2}</strong></div>
         <div class="calc-row hilite"><span>Tiles needed (incl. waste)</span><strong>${r.tiles.toLocaleString()}</strong></div>
-        <div class="calc-row"><span>Adhesive (20 kg)</span><strong>${r.adhesive_bags} bags</strong></div>
+        <div class="calc-row hilite"><span>Adhesive (20 kg bags)</span><strong>${r.adhesive_bags}</strong></div>
+        <div class="calc-row"><span>Adhesive product</span><strong>${escapeHtml(r.adhesive_name)}</strong></div>
         <div class="calc-row"><span>Grout (~${TILE_GROUT_KG_PER_M2_PER_MM_JOINT} kg/m²/mm joint)</span><strong>${r.grout_kg} kg</strong></div>
-        <div class="meta cite">Source: SANS 10107 ceramic tiling rules of thumb</div>
-        <div class="actions">${boqButton(`Tiling ${area_m2} m² (${body.querySelector('#tW').value}×${body.querySelector('#tH').value} mm)`, 'Tiling',
-          { area_m2, tile_w_mm:+body.querySelector('#tW').value, tile_h_mm:+body.querySelector('#tH').value, joint_mm:+body.querySelector('#tJ').value },
-          { tiles: r.tiles, adhesive_bags: r.adhesive_bags, grout_kg: r.grout_kg })}</div>`;
+        <div class="calc-row"><span>Grout product</span><strong>${escapeHtml(r.grout_name)}</strong></div>
+        <div class="callout"><strong>Notes:</strong> ${escapeHtml(r.notes)}</div>
+        <div class="meta cite">Source: SANS 10107 ceramic tiling · TAL technical data sheets (matched adhesive/grout for tile type)</div>
+        <div class="actions">${boqButton(`Tiling ${area_m2} m² (${body.querySelector('#tW').value}×${body.querySelector('#tH').value} mm · ${tileType})`, 'Tiling',
+          { area_m2, tile_w_mm:+body.querySelector('#tW').value, tile_h_mm:+body.querySelector('#tH').value, joint_mm:+body.querySelector('#tJ').value, tileType },
+          { tiles: r.tiles, adhesive_bags: r.adhesive_bags, grout_kg: r.grout_kg, adhesive: r.adhesive_name })}</div>`;
       wireBoqButtons(body);
     };
-    body.querySelectorAll('input').forEach(el => el.addEventListener('input', compute));
+    body.querySelectorAll('input, select').forEach(el => el.addEventListener('input', compute));
     compute();
   }
 
   function paintView(escapeHtml, body) {
+    const opts = Object.entries(PLASCON).map(([k, v]) =>
+      `<option value="${k}"${k==='wall_and_all'?' selected':''}>${v.label} — ${v.cov} m²/L (${v.use})</option>`).join('');
     body.innerHTML = `
       <div class="calc-form">
         ${field('Area (m²)', '<input id="pnA" type="number" step="1" min="0" value="100">')}
         ${field('Coats', '<input id="pnC" type="number" step="1" min="1" value="2">')}
-        ${field('Type', '<select id="pnT"><option value="pva" selected>PVA (matte / sheen) — ~7 m²/L</option><option value="enamel">Enamel — ~10 m²/L</option><option value="primer">Primer — ~9 m²/L</option><option value="plaster_primer">Plaster primer — ~6 m²/L</option><option value="roof">Roof paint — ~4 m²/L</option></select>')}
+        ${field('Plascon product', `<select id="pnT">${opts}</select>`)}
       </div>
       <div id="pnDia"></div>
       <div id="pnOut" class="calc-out"></div>`;
@@ -803,8 +986,14 @@ window.NHBRC_CALCULATORS = (function () {
       const W = 460, H = 200;
       let tins = '';
       const n = Math.min(r.tins5L, 18);
-      const colors = { pva:'#f5c4d3', enamel:'#cfd8d4', primer:'#d4cab2', plaster_primer:'#e0d8c4', roof:'#a05030' };
-      const c = colors[type] || '#6fdc9a';
+      const colors = {
+        wall_and_all:'#f5c4d3', double_velvet:'#e891ad', cashmere:'#f0d8c4',
+        velvaglo:'#d8e6e0', velvaglo_nxt:'#cfdbd4', micatex:'#c8a878',
+        nuroof_cool:'#a8c4d8', roofguard:'#a05030',
+        plaster_primer:'#e0d8c4', bonding_liquid:'#d4cab2',
+        universal_undercoat:'#f4f0e6', galv_iron_primer:'#9aa8a4',
+      };
+      const c = colors[type] || '#f5c4d3';
       for (let i = 0; i < n; i++) {
         const x = 30 + i * 24;
         tins += `<rect x="${x}" y="${H/2 - 30}" width="18" height="50" fill="${c}" stroke="rgba(0,0,0,.4)"/>
@@ -819,12 +1008,15 @@ window.NHBRC_CALCULATORS = (function () {
         <text x="${W/2}" y="20" font-size="11" text-anchor="middle" fill="${C.accent}">${coats} coat${coats>1?'s':''} · ${r.litres} L total</text>
       `, W, H);
       body.querySelector('#pnOut').innerHTML = `
-        <div class="calc-row hilite"><span>Paint required</span><strong>${r.litres} L</strong></div>
+        <div class="calc-row hilite"><span>${escapeHtml(r.product_label)}</span><strong>${r.litres} L</strong></div>
+        <div class="calc-row"><span>Use case</span><strong>${escapeHtml(r.product_use)}</strong></div>
+        <div class="calc-row"><span>Coverage</span><strong>${r.coverage_m2_per_L} m²/L · ${r.sheen} · ${r.base}-based</strong></div>
         <div class="calc-row"><span>5 L tins</span><strong>${r.tins5L}</strong></div>
         <div class="calc-row"><span>20 L tins</span><strong>${r.tins20L}</strong></div>
-        <div class="meta cite">Source: typical SA paint coverage rates (manufacturer data sheets)</div>
-        <div class="actions">${boqButton(`Paint ${area_m2} m² × ${coats} coats (${type})`, 'Paint',
-          { area_m2, coats, type }, { litres: r.litres, tins5L: r.tins5L })}</div>`;
+        <div class="callout"><strong>Application:</strong> ${escapeHtml(r.notes)}</div>
+        <div class="meta cite">Source: Plascon technical data sheets (plascon.co.za) · coverage on smooth substrate, 2 coats</div>
+        <div class="actions">${boqButton(`${r.product_label} ${area_m2} m² × ${coats} coats`, 'Paint',
+          { area_m2, coats, type, product: r.product_label }, { litres: r.litres, tins5L: r.tins5L, product: r.product_label })}</div>`;
       wireBoqButtons(body);
     };
     body.querySelectorAll('input, select').forEach(el => el.addEventListener('input', compute));
@@ -1565,13 +1757,24 @@ window.NHBRC_CALCULATORS = (function () {
     const W = 460, H = 280;
     const a = 30 * Math.PI / 180;
     const cos = Math.cos(a), sin = Math.sin(a);
-    // Independent per-axis scale so thin walls / long slabs stay readable.
-    // Each axis gets a sensible visual share of the canvas, with floors so
-    // very small dimensions don't disappear.
-    const maxL = length_mm, maxH = height_mm, maxD = depth_mm;
-    const Lpx = Math.max(60, Math.min(280, maxL * 0.04));     // 60..280 px
-    const Hpx = Math.max(50, Math.min(160, maxH * 0.045));    // 50..160 px
-    const Dpx = Math.max(28, Math.min(110, maxD * 0.18));     // 28..110 px (depth always ≥28 so wall thickness is visible)
+    // TRUE proportional iso scaling — find one px-per-mm scale that fits all
+    // three axes inside the canvas. This means a flat slab renders flat, a
+    // tall wall renders tall, and a column renders narrow & tall.
+    const padX = 70, padBottom = 50, padTop = 40;
+    const usableW = W - padX * 2;
+    const usableH = H - padTop - padBottom;
+    // Iso footprint width  = (length + depth) * cos
+    // Iso footprint height = height + (length + depth) * sin
+    const denomW = (length_mm + depth_mm) * cos;
+    const denomH = height_mm + (length_mm + depth_mm) * sin;
+    const sFit = Math.min(usableW / Math.max(denomW, 1), usableH / Math.max(denomH, 1));
+    // Floor: tiny dims still visible (e.g. 80mm slab won't disappear), but
+    // never overpower the dominant dim.
+    const dominant = Math.max(length_mm, height_mm, depth_mm);
+    const minPx = Math.min(18, dominant * sFit * 0.06);  // ~6% of dominant or 18 px
+    const Lpx = Math.max(minPx, length_mm * sFit);
+    const Hpx = Math.max(minPx, height_mm * sFit);
+    const Dpx = Math.max(minPx, depth_mm  * sFit);
     const L = Lpx, Hgt = Hpx, D = Dpx;
     // Origin: bottom-front-left corner of the front face
     const ox = 60, oy = H - 30 - D * sin;
@@ -1616,6 +1819,22 @@ window.NHBRC_CALCULATORS = (function () {
         }
       }
       patternOverlay = lines;
+    } else if (pattern === 'concrete') {
+      // Random aggregate stippling on the front face (simulates 19 mm stone)
+      let g = '';
+      const cosL = (fbr[0] - fbl[0]) / L, sinL = (fbr[1] - fbl[1]) / L;
+      // Deterministic pseudo-random (so it doesn't twitch on each redraw)
+      let seed = 1337;
+      const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+      const numDots = Math.floor(L * Hgt / 220);
+      for (let i = 0; i < numDots; i++) {
+        const u = rnd(), v = rnd();
+        const px = fbl[0] + u * L * cosL + 0;
+        const py = fbl[1] + u * L * sinL - v * Hgt;
+        const r2 = 0.8 + rnd() * 1.4;
+        g += `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${r2.toFixed(1)}" fill="rgba(0,0,0,${(0.18 + rnd() * 0.18).toFixed(2)})"/>`;
+      }
+      patternOverlay = g;
     } else if (pattern === 'tile') {
       // Square tile grid
       const tileSize = Math.max(8, Math.min(20, Hgt / 8));
@@ -1641,18 +1860,48 @@ window.NHBRC_CALCULATORS = (function () {
       <foreignObject x="0" y="2" width="${W}" height="32">
         <div xmlns="http://www.w3.org/1999/xhtml" style="font:11px system-ui,sans-serif;color:${C.muted};text-align:center;line-height:1.3;padding:0 8px">${title}</div>
       </foreignObject>` : '';
+    // Darken/lighten helpers for face shading
+    const shade = (hex, pct) => {
+      const c = hex.replace('#','');
+      const n = parseInt(c.length === 3 ? c.split('').map(x=>x+x).join('') : c, 16);
+      let r = (n>>16)&255, g = (n>>8)&255, b = n&255;
+      r = Math.max(0, Math.min(255, Math.round(r + (pct < 0 ? r * pct/100 : (255-r) * pct/100))));
+      g = Math.max(0, Math.min(255, Math.round(g + (pct < 0 ? g * pct/100 : (255-g) * pct/100))));
+      b = Math.max(0, Math.min(255, Math.round(b + (pct < 0 ? b * pct/100 : (255-b) * pct/100))));
+      return `rgb(${r},${g},${b})`;
+    };
+    // 3-tone face shading (top brightest = sun above; right side darker)
+    const topFill   = shade(topColor || frontColor, 18);
+    const frontFill = frontColor;
+    const sideFill  = shade(sideColor || frontColor, -28);
+    // Top face = bbr[0], bbr[1]-Hgt (back-top-right with -Hgt offset)
+    const btr_top = [bbr[0], bbr[1] - Hgt];
+    // Ground shadow ellipse
+    const shadowCx = (fbl[0] + bbr[0]) / 2;
+    const shadowCy = oy + 8;
+    const shadowRx = (bbr[0] - fbl[0]) / 2 + 14;
+    const shadowRy = 10;
     return svgWrap(`
       ${titleSvg}
-      ${poly([fbl, ftl, btl, [bbr[0], bbr[1] - Hgt]], topColor)}
-      <polygon points="${[fbl, ftl, btl, [bbr[0], bbr[1] - Hgt]].map(p=>p.join(',')).join(' ')}" fill="url(#gradTop)"/>
-      ${poly([fbr, ftr, [bbr[0], bbr[1] - Hgt], bbr], sideColor)}
-      ${poly([fbl, fbr, ftr, ftl], frontColor)}
-      <polygon points="${[fbl, fbr, ftr, ftl].map(p=>p.join(',')).join(' ')}" fill="url(#gradFront)"/>
+      <!-- ground shadow -->
+      <ellipse cx="${shadowCx}" cy="${shadowCy}" rx="${shadowRx}" ry="${shadowRy}" fill="rgba(0,0,0,.32)" filter="blur(1px)"/>
+      <!-- TOP face (lit) -->
+      <polygon points="${ftl.join(',')} ${btl.join(',')} ${btr_top.join(',')} ${ftr.join(',')}" fill="${topFill}" stroke="rgba(0,0,0,.6)" stroke-width="1.2" stroke-linejoin="round"/>
+      <polygon points="${ftl.join(',')} ${btl.join(',')} ${btr_top.join(',')} ${ftr.join(',')}" fill="url(#gradTop)" opacity="0.6"/>
+      <!-- SIDE face (right, in shadow) -->
+      <polygon points="${fbr.join(',')} ${ftr.join(',')} ${btr_top.join(',')} ${bbr.join(',')}" fill="${sideFill}" stroke="rgba(0,0,0,.7)" stroke-width="1.2" stroke-linejoin="round"/>
+      <!-- FRONT face (mid) -->
+      <polygon points="${fbl.join(',')} ${fbr.join(',')} ${ftr.join(',')} ${ftl.join(',')}" fill="${frontFill}" stroke="rgba(0,0,0,.65)" stroke-width="1.2" stroke-linejoin="round"/>
+      <polygon points="${fbl.join(',')} ${fbr.join(',')} ${ftr.join(',')} ${ftl.join(',')}" fill="url(#gradFront)" opacity="0.55"/>
+      <!-- pattern (brick courses / tile grid) -->
       ${patternOverlay}
+      <!-- highlight along top-front edge -->
+      <line x1="${ftl[0]}" y1="${ftl[1]}" x2="${ftr[0]}" y2="${ftr[1]}" stroke="rgba(255,255,255,.35)" stroke-width="1"/>
+      <line x1="${ftl[0]}" y1="${ftl[1]}" x2="${btl[0]}" y2="${btl[1]}" stroke="rgba(255,255,255,.25)" stroke-width="1"/>
       ${frontLabel ? `<text x="${(fbl[0]+ftr[0])/2}" y="${(fbl[1]+ftr[1])/2}" font-size="11" text-anchor="middle" fill="rgba(0,0,0,.7)" font-weight="700">${frontLabel}</text>` : ''}
-      ${dim(fbl[0], fbl[1] + 18, fbr[0], fbr[1] + 18, length_mm + ' mm')}
-      ${dim(fbr[0] + 14, ftr[1], fbr[0] + 14, fbr[1], height_mm + ' mm')}
-      ${dim(bbr[0] - 2, bbr[1] - Hgt - 18, fbr[0] + 6, ftr[1] - 18, depth_mm + ' mm', C.warn)}
+      ${dim(fbl[0], fbl[1] + 22, fbr[0], fbr[1] + 22, length_mm + ' mm')}
+      ${dim(fbr[0] + 18, ftr[1], fbr[0] + 18, fbr[1], height_mm + ' mm')}
+      ${dim(btl[0] - 8, btl[1] - 18, ftl[0] - 8, ftl[1] - 18, depth_mm + ' mm', C.warn)}
     `, W, H);
   }
 
@@ -1750,32 +1999,55 @@ window.NHBRC_CALCULATORS = (function () {
   }
 
   function pipeView(escapeHtml, body) {
+    const matOpts = Object.entries(PIPE_MATERIALS).map(([k, v], i) =>
+      `<option value="${k}"${i===0?' selected':''}>${v.label}</option>`).join('');
+    const purpOpts = Object.entries(PIPE_PURPOSE).map(([k, v], i) =>
+      `<option value="${k}"${i===0?' selected':''}>${v.label}</option>`).join('');
     body.innerHTML = `
       <div class="calc-form">
-        ${field('Pipe diameter (mm)', '<input id="piD" type="number" step="10" min="50" value="100">')}
-        ${field('Slope (%) — e.g. 1.0 for 1:100', '<input id="piS" type="number" step="0.1" min="0.1" value="1.67">')}
-        ${field('Manning n (smooth PVC ≈ 0.011, concrete ≈ 0.013)', '<input id="piN" type="number" step="0.001" min="0.005" value="0.013">')}
+        ${field('Pipe material', `<select id="piMat">${matOpts}</select>`)}
+        ${field('Service / purpose', `<select id="piPurp">${purpOpts}</select>`)}
+        ${field('Pipe diameter (mm)', '<select id="piD"></select>')}
+        ${field('Slope (%) — e.g. 1.67 for 1:60', '<input id="piS" type="number" step="0.05" min="0.1" value="1.67">')}
       </div>
       <div id="piDia"></div>
       <div id="piOut" class="calc-out"></div>`;
+    const matSel = body.querySelector('#piMat');
+    const dSel   = body.querySelector('#piD');
+    const fillDiameters = () => {
+      const m = PIPE_MATERIALS[matSel.value];
+      dSel.innerHTML = m.diameters.map(d => `<option value="${d}"${d===110?' selected':''}>${d} mm</option>`).join('');
+      // Default-pick a sane diameter if 110 isn't in the list
+      if (![...dSel.options].some(o => o.selected)) dSel.options[Math.floor(dSel.options.length/2)].selected = true;
+    };
+    fillDiameters();
     const compute = () => {
-      const diameter_mm = +body.querySelector('#piD').value;
+      const diameter_mm = +dSel.value;
       const slope_pct = +body.querySelector('#piS').value;
-      const n = +body.querySelector('#piN').value;
-      const r = calcPipeFlow({ diameter_mm, slope_pct, n });
+      const material  = matSel.value;
+      const purpose   = body.querySelector('#piPurp').value;
+      const n = PIPE_MATERIALS[material].n;
+      const r = calcPipeFlow({ diameter_mm, slope_pct, n, purpose, material });
       if (r.error) return body.querySelector('#piOut').innerHTML = `<div class="empty">${escapeHtml(r.error)}</div>`;
       body.querySelector('#piDia').innerHTML = drawPipe({ diameter_mm, slope_pct, velocity_ms: r.velocity_ms, full: false });
       body.querySelector('#piOut').innerHTML = `
+        <div class="calc-row hilite"><span>Material</span><strong>${escapeHtml(r.material_label)}</strong></div>
+        <div class="calc-row"><span>Use case</span><strong>${escapeHtml(r.material_use)}</strong></div>
+        <div class="calc-row"><span>Service</span><strong>${escapeHtml(r.purpose_label)}</strong></div>
+        <div class="calc-row"><span>Manning n (auto)</span><strong>${r.n_used}</strong></div>
         <div class="calc-row"><span>Slope as 1:N</span><strong>1 : ${r.slope_one_in}</strong></div>
         <div class="calc-row"><span>Pipe area (full bore)</span><strong>${r.area_m2} m²</strong></div>
         <div class="calc-row"><span>Velocity</span><strong>${r.velocity_ms} m/s</strong></div>
         <div class="calc-row hilite"><span>Full-bore flow capacity</span><strong>${r.flow_Lps} L/s</strong></div>
         <div class="callout">${escapeHtml(r.capacity_note)}</div>
-        <div class="meta cite">Source: Manning's equation · SANS 10400-P drainage gradients (1:60 for 100 mm Ø foul)</div>
-        <div class="actions">${boqButton(`Pipe Ø${diameter_mm} mm @ ${slope_pct}%`, 'Pipe flow', { diameter_mm, slope_pct, n }, { velocity_ms: r.velocity_ms, flow_Lps: r.flow_Lps })}</div>`;
+        <div class="callout"><strong>${escapeHtml(r.material_std)} gradient note:</strong> ${escapeHtml(r.slope_note)}</div>
+        <div class="meta cite">Source: Manning's equation · SANS 10400-P drainage gradients · ${escapeHtml(r.material_std)} pipe-material standard</div>
+        <div class="actions">${boqButton(`Pipe Ø${diameter_mm} ${material} @ ${slope_pct}%`, 'Pipe flow',
+          { diameter_mm, slope_pct, material, purpose, n }, { velocity_ms: r.velocity_ms, flow_Lps: r.flow_Lps, material: r.material_label })}</div>`;
       wireBoqButtons(body);
     };
-    body.querySelectorAll('input').forEach(el => el.addEventListener('input', compute));
+    matSel.addEventListener('change', () => { fillDiameters(); compute(); });
+    body.querySelectorAll('input, select').forEach(el => el.addEventListener('input', compute));
     compute();
   }
 
