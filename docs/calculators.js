@@ -1069,7 +1069,35 @@ window.NHBRC_CALCULATORS = (function () {
 
   // ---------- Live diagram renderers (SVG, inline, no deps) ----------
   function svgWrap(content, w = 400, h = 240) {
-    return `<svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:520px;display:block;margin:8px auto;background:#0c1a13;border:1px solid rgba(255,255,255,.08);border-radius:10px">${content}</svg>`;
+    // Shared <defs> — patterns + gradients reused across diagrams
+    const defs = `
+      <defs>
+        <pattern id="hatchSoil" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(0,0,0,.25)" stroke-width="1.2"/>
+        </pattern>
+        <pattern id="hatchConcrete" patternUnits="userSpaceOnUse" width="6" height="6">
+          <circle cx="3" cy="3" r="0.6" fill="rgba(0,0,0,.35)"/>
+          <circle cx="0" cy="0" r="0.5" fill="rgba(0,0,0,.25)"/>
+        </pattern>
+        <pattern id="hatchSteel" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(-45)">
+          <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(0,0,0,.4)" stroke-width="0.6"/>
+        </pattern>
+        <pattern id="hatchInsul" patternUnits="userSpaceOnUse" width="14" height="6">
+          <path d="M0,3 q3.5,-3 7,0 t7,0" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="0.8"/>
+        </pattern>
+        <linearGradient id="gradFront" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="rgba(255,255,255,.1)"/>
+          <stop offset="100%" stop-color="rgba(0,0,0,.1)"/>
+        </linearGradient>
+        <linearGradient id="gradTop" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="rgba(255,255,255,.18)"/>
+          <stop offset="100%" stop-color="rgba(255,255,255,.0)"/>
+        </linearGradient>
+        <marker id="arrowAcc" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L0,6 L6,3 z" fill="${C.accent}"/>
+        </marker>
+      </defs>`;
+    return `<svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:520px;display:block;margin:8px auto;background:#0c1a13;border:1px solid rgba(255,255,255,.08);border-radius:10px">${defs}${content}</svg>`;
   }
   // Diagram palette — match brand (pink) + realistic material colours.
   // Strong-contrast accent for dimensions / labels: pink. Realistic fills
@@ -1087,169 +1115,439 @@ window.NHBRC_CALCULATORS = (function () {
   };
 
   function drawStairs({ rise_mm, going_mm, risers }) {
-    const W = 400, H = 240, pad = 30;
+    // Engineering side-elevation: concrete-hatched stair body, treads/risers,
+    // handrail at 1000 mm, pitch line, FFL labels, going/rise dim arrows.
+    const W = 460, H = 280;
+    const padL = 50, padR = 60, padT = 40, padB = 50;
     const totalRun = (risers - 1) * going_mm;
     const totalRise = risers * rise_mm;
-    const scale = Math.min((W - 2*pad) / totalRun, (H - 2*pad) / totalRise);
-    const ox = pad, oy = H - pad;
-    let stairs = '';
+    const scale = Math.min((W - padL - padR) / Math.max(totalRun, 1), (H - padT - padB) / Math.max(totalRise, 1));
+    const ox = padL, oy = H - padB;
+    // Stair body polygon (concrete waist)
+    let body = `M ${ox} ${oy} `;
     for (let i = 0; i < risers; i++) {
       const x = ox + i * going_mm * scale;
-      const y = oy - i * rise_mm * scale;
-      stairs += `<rect x="${x}" y="${y - rise_mm*scale}" width="${going_mm*scale}" height="${rise_mm*scale}" fill="${C.fill}" stroke="${C.dim}"/>`;
+      const y = oy - (i + 1) * rise_mm * scale;
+      body += `L ${x} ${y - (i ? 0 : 0)} L ${x + going_mm * scale} ${y} `;
     }
-    const slopeX = ox + totalRun * scale, slopeY = oy - totalRise * scale;
+    body += `L ${ox + totalRun * scale + going_mm * scale} ${oy} Z`;
+    // Tread/riser strokes
+    let treads = '';
+    for (let i = 0; i < risers; i++) {
+      const x = ox + i * going_mm * scale;
+      const y = oy - (i + 1) * rise_mm * scale;
+      treads += `<line x1="${x}" y1="${y}" x2="${x + going_mm*scale}" y2="${y}" stroke="#222" stroke-width="1"/>`;
+      treads += `<line x1="${x}" y1="${y}" x2="${x}" y2="${oy - i*rise_mm*scale}" stroke="#222" stroke-width="1"/>`;
+    }
+    const slopeX = ox + totalRun * scale + going_mm * scale, slopeY = oy - totalRise * scale;
     const angle = Math.atan2(totalRise, totalRun) * 180 / Math.PI;
+    // Handrail @ 1000 mm above pitch line
+    const railOff = 1000 * scale;
+    const dx = (slopeX - ox), dy = (slopeY - oy);
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len, ny = dx / len; // perpendicular up
+    const r1x = ox + nx * railOff, r1y = oy + ny * railOff;
+    const r2x = slopeX + nx * railOff, r2y = slopeY + ny * railOff;
     return svgWrap(`
-      <line x1="0" y1="${oy}" x2="${W}" y2="${oy}" stroke="${C.muted}" stroke-width="0.5"/>
-      ${stairs}
-      <line x1="${ox}" y1="${oy}" x2="${slopeX}" y2="${slopeY}" stroke="${C.red}" stroke-width="2" stroke-dasharray="4 3"/>
-      <text x="${(ox+slopeX)/2 + 6}" y="${(oy+slopeY)/2 - 6}" font-size="11" fill="${C.red}" font-weight="600">${angle.toFixed(1)}° pitch</text>
-      <text x="${ox - 4}" y="${oy + 14}" font-size="10" fill="${C.muted}">FFL</text>
-      <text x="${slopeX - 24}" y="${slopeY - 6}" font-size="10" fill="${C.accent}">+${totalRise} mm</text>
-      <line x1="${ox}" y1="${oy + 18}" x2="${slopeX}" y2="${oy + 18}" stroke="${C.muted}" stroke-width="0.5"/>
-      <text x="${(ox+slopeX)/2 - 30}" y="${oy + 30}" font-size="10" fill="${C.muted}">total run ${totalRun} mm</text>
+      <!-- FFL lines -->
+      <line x1="0" y1="${oy}" x2="${ox + 8}" y2="${oy}" stroke="${C.muted}" stroke-width="1"/>
+      <line x1="${slopeX - 8}" y1="${slopeY}" x2="${W}" y2="${slopeY}" stroke="${C.muted}" stroke-width="1"/>
+      <text x="6" y="${oy - 4}" font-size="10" fill="${C.muted}">FFL lower</text>
+      <text x="${W - 6}" y="${slopeY - 4}" font-size="10" text-anchor="end" fill="${C.muted}">FFL upper</text>
+      <!-- stair concrete body -->
+      <path d="${body}" fill="#a8a8a4" stroke="#222" stroke-width="1.2"/>
+      <path d="${body}" fill="url(#hatchConcrete)"/>
+      ${treads}
+      <!-- pitch line -->
+      <line x1="${ox}" y1="${oy}" x2="${slopeX}" y2="${slopeY}" stroke="${C.red}" stroke-width="1.4" stroke-dasharray="5 3"/>
+      <!-- handrail -->
+      <line x1="${r1x}" y1="${r1y}" x2="${r2x}" y2="${r2y}" stroke="${C.accent}" stroke-width="2"/>
+      <line x1="${ox}" y1="${oy}" x2="${r1x}" y2="${r1y}" stroke="${C.accent}" stroke-width="1.5"/>
+      <line x1="${slopeX}" y1="${slopeY}" x2="${r2x}" y2="${r2y}" stroke="${C.accent}" stroke-width="1.5"/>
+      <text x="${(r1x + r2x)/2}" y="${(r1y + r2y)/2 - 6}" font-size="10" text-anchor="middle" fill="${C.accent}">handrail @ 1000 mm</text>
+      <!-- pitch angle -->
+      <text x="${(ox + slopeX)/2 + 4}" y="${(oy + slopeY)/2 - 8}" font-size="11" fill="${C.red}" font-weight="700">${angle.toFixed(1)}°</text>
+      <!-- total rise dim (right side) -->
+      <line x1="${slopeX + 22}" y1="${oy}" x2="${slopeX + 22}" y2="${slopeY}" stroke="${C.accent}" stroke-width="1" marker-start="url(#arrowAcc)" marker-end="url(#arrowAcc)"/>
+      <text x="${slopeX + 28}" y="${(oy + slopeY)/2}" font-size="10" fill="${C.accent}" font-weight="700">${totalRise} mm</text>
+      <!-- total run dim (below) -->
+      <line x1="${ox}" y1="${oy + 26}" x2="${slopeX}" y2="${oy + 26}" stroke="${C.accent}" stroke-width="1" marker-start="url(#arrowAcc)" marker-end="url(#arrowAcc)"/>
+      <text x="${(ox + slopeX)/2}" y="${oy + 40}" font-size="10" text-anchor="middle" fill="${C.accent}" font-weight="700">run ${totalRun} mm</text>
+      <!-- single going/rise call-out -->
+      <text x="${ox + going_mm*scale*0.5}" y="${oy - rise_mm*scale*0.5}" font-size="9" text-anchor="middle" fill="${C.warn}">${going_mm}×${rise_mm}</text>
+      <text x="${W - 6}" y="${H - 6}" font-size="10" text-anchor="end" fill="${C.muted}">${risers} risers</text>
     `, W, H);
   }
 
   function drawStrip({ width_m, depth_m, mpa }) {
-    const W = 400, H = 240, ground = 80;
+    // Engineering cross-section: ground line, hatched soil, brick wall above
+    // (with course lines), reinforced footing, dimension arrows.
+    const W = 460, H = 280;
+    const gnd = 90;
     const wmm = width_m * 1000, dmm = depth_m * 1000;
-    const pxPer = Math.min(280 / wmm, 100 / dmm) * 1.2;
-    const wpx = wmm * pxPer, dpx = dmm * pxPer;
-    const cx = W / 2, ftop = ground + 50, fleft = cx - wpx/2;
-    const wallW = 220 * pxPer, wallH = 80; // schematic wall above
+    const pxScale = Math.min(280 / wmm, 110 / Math.max(dmm, 200));
+    const wpx = wmm * pxScale, dpx = dmm * pxScale;
+    const cx = W / 2;
+    const ftop = gnd + 60;          // 60 px below NGL → buried footing
+    const fleft = cx - wpx/2;
+    const wallW = 220 * pxScale * 1.5;  // visually exaggerated for clarity
+    const wallH = 70;
+    // Brick course lines
+    let courses = '';
+    const courseH = 12;
+    for (let y = gnd - wallH; y < gnd; y += courseH) {
+      courses += `<line x1="${cx - wallW/2}" y1="${y}" x2="${cx + wallW/2}" y2="${y}" stroke="rgba(0,0,0,.35)" stroke-width="0.5"/>`;
+    }
     return svgWrap(`
-      <rect x="0" y="${ground + 50}" width="${W}" height="${H - ground - 50}" fill="${C.soil}" opacity=".5"/>
-      <line x1="0" y1="${ground + 50}" x2="${W}" y2="${ground + 50}" stroke="${C.muted}" stroke-width="0.5"/>
-      <text x="6" y="${ground + 46}" font-size="10" fill="${C.muted}">NGL</text>
-      <rect x="${cx - wallW/2}" y="${ground + 50 - wallH}" width="${wallW}" height="${wallH}" fill="${C.fill}" stroke="${C.dim}"/>
-      <text x="${cx}" y="${ground + 8}" font-size="11" text-anchor="middle" fill="${C.muted}">220 mm wall</text>
-      <rect x="${fleft}" y="${ftop}" width="${wpx}" height="${dpx}" fill="${C.accent}" opacity="0.55" stroke="${C.accent}"/>
-      <text x="${cx}" y="${ftop + dpx/2 + 4}" font-size="11" text-anchor="middle" fill="#0c1a13" font-weight="700">${mpa} MPa</text>
-      <line x1="${fleft}" y1="${ftop + dpx + 14}" x2="${fleft + wpx}" y2="${ftop + dpx + 14}" stroke="${C.accent}" stroke-width="1"/>
-      <text x="${cx}" y="${ftop + dpx + 28}" font-size="11" text-anchor="middle" fill="${C.accent}">width ${wmm} mm</text>
-      <line x1="${fleft + wpx + 14}" y1="${ftop}" x2="${fleft + wpx + 14}" y2="${ftop + dpx}" stroke="${C.accent}" stroke-width="1"/>
-      <text x="${fleft + wpx + 20}" y="${ftop + dpx/2 + 4}" font-size="11" fill="${C.accent}">depth ${dmm} mm</text>
+      <!-- sky -->
+      <rect x="0" y="0" width="${W}" height="${gnd}" fill="rgba(255,255,255,.02)"/>
+      <!-- soil mass -->
+      <rect x="0" y="${gnd}" width="${W}" height="${H - gnd}" fill="#7a4f2b"/>
+      <rect x="0" y="${gnd}" width="${W}" height="${H - gnd}" fill="url(#hatchSoil)"/>
+      <!-- ground line -->
+      <line x1="0" y1="${gnd}" x2="${W}" y2="${gnd}" stroke="#222" stroke-width="1.5"/>
+      <text x="6" y="${gnd - 6}" font-size="10" fill="${C.muted}">NGL — natural ground level</text>
+      <!-- masonry wall above -->
+      <rect x="${cx - wallW/2}" y="${gnd - wallH}" width="${wallW}" height="${wallH}" fill="#b87a5a" stroke="#5a3a17" stroke-width="0.8"/>
+      ${courses}
+      <text x="${cx}" y="${gnd - wallH - 6}" font-size="10" text-anchor="middle" fill="${C.muted}">220 mm load-bearing wall</text>
+      <!-- DPC line -->
+      <line x1="${cx - wallW/2 - 4}" y1="${gnd - 5}" x2="${cx + wallW/2 + 4}" y2="${gnd - 5}" stroke="#1a8a4a" stroke-width="2"/>
+      <text x="${cx + wallW/2 + 8}" y="${gnd - 1}" font-size="9" fill="#6fdc9a">DPC</text>
+      <!-- mass-strip footing — concrete fill + dotted pattern -->
+      <rect x="${fleft}" y="${ftop}" width="${wpx}" height="${dpx}" fill="#a8a8a4" stroke="#222" stroke-width="1"/>
+      <rect x="${fleft}" y="${ftop}" width="${wpx}" height="${dpx}" fill="url(#hatchConcrete)"/>
+      <text x="${cx}" y="${ftop + dpx/2 + 4}" font-size="11" text-anchor="middle" fill="#222" font-weight="700">${mpa} MPa</text>
+      <!-- width dim -->
+      <line x1="${fleft}" y1="${ftop + dpx + 16}" x2="${fleft + wpx}" y2="${ftop + dpx + 16}" stroke="${C.accent}" stroke-width="1" marker-start="url(#arrowAcc)" marker-end="url(#arrowAcc)"/>
+      <text x="${cx}" y="${ftop + dpx + 30}" font-size="11" text-anchor="middle" fill="${C.accent}" font-weight="700">${wmm} mm wide</text>
+      <!-- depth dim -->
+      <line x1="${fleft + wpx + 18}" y1="${ftop}" x2="${fleft + wpx + 18}" y2="${ftop + dpx}" stroke="${C.accent}" stroke-width="1" marker-start="url(#arrowAcc)" marker-end="url(#arrowAcc)"/>
+      <text x="${fleft + wpx + 24}" y="${ftop + dpx/2 + 4}" font-size="11" fill="${C.accent}" font-weight="700">${dmm} mm</text>
+      <!-- depth-below-NGL note -->
+      <line x1="${cx - wallW/2 - 30}" y1="${gnd}" x2="${cx - wallW/2 - 30}" y2="${ftop + dpx}" stroke="${C.warn}" stroke-width="0.8" stroke-dasharray="3 3"/>
+      <text x="${cx - wallW/2 - 36}" y="${(gnd + ftop)/2}" font-size="10" text-anchor="end" fill="${C.warn}">≥ 400 mm</text>
+      <text x="${cx - wallW/2 - 36}" y="${(gnd + ftop)/2 + 12}" font-size="9" text-anchor="end" fill="${C.warn}">below NGL</text>
     `, W, H);
   }
 
   function drawBeam({ span_m, udl_kNm, point_kN, point_pos_m, Ra, Rb, Mmax }) {
-    const W = 400, H = 240, padX = 60, padY = 70;
+    // Engineering schematic: hatched-steel beam, UDL arrows, point load,
+    // pinned/roller supports, reactions, BMD curve below.
+    const W = 460, H = 280;
+    const padX = 60;
     const beamY = 110;
     const bx0 = padX, bx1 = W - padX, bw = bx1 - bx0;
     const xAt = (m) => bx0 + (m / span_m) * bw;
-    // UDL arrows
     let udlArr = '';
     if (udl_kNm > 0) {
       for (let i = 0; i <= 10; i++) {
         const x = bx0 + (i / 10) * bw;
-        udlArr += `<line x1="${x}" y1="${beamY - 28}" x2="${x}" y2="${beamY - 4}" stroke="${C.warn}" stroke-width="1.5" marker-end="url(#arrow)"/>`;
+        udlArr += `<line x1="${x}" y1="${beamY - 36}" x2="${x}" y2="${beamY - 6}" stroke="${C.warn}" stroke-width="1.5" marker-end="url(#arrowWarn)"/>`;
       }
+      udlArr += `<line x1="${bx0}" y1="${beamY - 36}" x2="${bx1}" y2="${beamY - 36}" stroke="${C.warn}" stroke-width="1"/>`;
+      udlArr += `<text x="${(bx0+bx1)/2}" y="${beamY - 42}" font-size="11" text-anchor="middle" fill="${C.warn}" font-weight="600">UDL ${udl_kNm} kN/m</text>`;
     }
     let pt = '';
     if (point_kN > 0) {
       const px = xAt(point_pos_m);
-      pt = `<line x1="${px}" y1="${beamY - 50}" x2="${px}" y2="${beamY - 4}" stroke="${C.red}" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <text x="${px + 4}" y="${beamY - 36}" font-size="11" fill="${C.red}" font-weight="700">${point_kN} kN</text>`;
+      pt = `<line x1="${px}" y1="${beamY - 60}" x2="${px}" y2="${beamY - 6}" stroke="${C.red}" stroke-width="2.5" marker-end="url(#arrowRed)"/>
+            <text x="${px + 6}" y="${beamY - 48}" font-size="11" fill="${C.red}" font-weight="700">${point_kN} kN</text>`;
     }
-    // Bending-moment diagram (parabolic for UDL + triangle for point)
     let bmd = '';
     if (Mmax > 0) {
-      const yScale = 50 / Mmax;
-      let path = `M ${bx0} ${beamY + 60}`;
-      for (let i = 0; i <= 30; i++) {
-        const m = (i / 30) * span_m;
+      const yScale = 60 / Mmax;
+      let path = `M ${bx0} ${beamY + 80}`;
+      for (let i = 0; i <= 40; i++) {
+        const m = (i / 40) * span_m;
         const Mu = udl_kNm * m * (span_m - m) / 2;
         const Mp = (m <= point_pos_m) ? point_kN * m * (span_m - point_pos_m) / span_m
                                        : point_kN * point_pos_m * (span_m - m) / span_m;
         const M = Mu + Mp;
         const x = xAt(m);
-        const y = beamY + 60 + M * yScale;
+        const y = beamY + 80 + M * yScale;
         path += ` L ${x.toFixed(1)} ${y.toFixed(1)}`;
       }
-      bmd = `<path d="${path} L ${bx1} ${beamY + 60} Z" fill="${C.accent}" opacity="0.25" stroke="${C.accent}" stroke-width="1.5"/>
-             <text x="${(bx0+bx1)/2}" y="${beamY + 60 + 50 * yScale + 16}" font-size="11" text-anchor="middle" fill="${C.accent}">M = ${Mmax.toFixed(2)} kN·m</text>`;
+      bmd = `<line x1="${bx0}" y1="${beamY + 80}" x2="${bx1}" y2="${beamY + 80}" stroke="${C.dim}" stroke-width="0.8"/>
+             <path d="${path} L ${bx1} ${beamY + 80} Z" fill="${C.accent}" opacity="0.30" stroke="${C.accent}" stroke-width="1.5"/>
+             <text x="${(bx0+bx1)/2}" y="${beamY + 80 + Mmax * yScale + 16}" font-size="11" text-anchor="middle" fill="${C.accent}" font-weight="700">M_max = ${Mmax.toFixed(2)} kN·m</text>
+             <text x="${bx1 + 6}" y="${beamY + 80 + 4}" font-size="9" fill="${C.muted}">BMD</text>`;
     }
     return svgWrap(`
-      <defs><marker id="arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto" markerUnits="strokeWidth">
-        <path d="M0,0 L0,6 L6,3 z" fill="${C.warn}"/></marker></defs>
+      <defs>
+        <marker id="arrowWarn" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="${C.warn}"/></marker>
+        <marker id="arrowRed" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="${C.red}"/></marker>
+      </defs>
       ${udlArr}${pt}
-      <rect x="${bx0}" y="${beamY - 4}" width="${bw}" height="8" fill="${C.fill}" stroke="${C.dim}"/>
-      <polygon points="${bx0 - 8},${beamY + 12} ${bx0 + 8},${beamY + 12} ${bx0},${beamY + 4}" fill="${C.muted}"/>
-      <polygon points="${bx1 - 8},${beamY + 12} ${bx1 + 8},${beamY + 12} ${bx1},${beamY + 4}" fill="${C.muted}"/>
-      <text x="${bx0}" y="${beamY + 28}" font-size="11" text-anchor="middle" fill="${C.accent}">${Ra.toFixed(1)} kN ↑</text>
-      <text x="${bx1}" y="${beamY + 28}" font-size="11" text-anchor="middle" fill="${C.accent}">${Rb.toFixed(1)} kN ↑</text>
-      <text x="${(bx0+bx1)/2}" y="${beamY - 50}" font-size="10" text-anchor="middle" fill="${C.warn}">UDL ${udl_kNm} kN/m × ${span_m} m</text>
+      <!-- beam -->
+      <rect x="${bx0}" y="${beamY - 6}" width="${bw}" height="12" fill="#7a8a8a" stroke="#222"/>
+      <rect x="${bx0}" y="${beamY - 6}" width="${bw}" height="12" fill="url(#hatchSteel)"/>
+      <!-- pinned support (left) -->
+      <polygon points="${bx0 - 10},${beamY + 18} ${bx0 + 10},${beamY + 18} ${bx0},${beamY + 6}" fill="#444" stroke="#222"/>
+      <line x1="${bx0 - 14}" y1="${beamY + 22}" x2="${bx0 + 14}" y2="${beamY + 22}" stroke="#444" stroke-width="2"/>
+      <!-- roller support (right) -->
+      <polygon points="${bx1 - 10},${beamY + 14} ${bx1 + 10},${beamY + 14} ${bx1},${beamY + 6}" fill="#444" stroke="#222"/>
+      <circle cx="${bx1 - 5}" cy="${beamY + 17}" r="3" fill="#444"/>
+      <circle cx="${bx1 + 5}" cy="${beamY + 17}" r="3" fill="#444"/>
+      <line x1="${bx1 - 14}" y1="${beamY + 22}" x2="${bx1 + 14}" y2="${beamY + 22}" stroke="#444" stroke-width="2"/>
+      <!-- reactions -->
+      <line x1="${bx0}" y1="${beamY + 30}" x2="${bx0}" y2="${beamY + 56}" stroke="${C.accent}" stroke-width="2" marker-start="url(#arrowAcc)"/>
+      <line x1="${bx1}" y1="${beamY + 30}" x2="${bx1}" y2="${beamY + 56}" stroke="${C.accent}" stroke-width="2" marker-start="url(#arrowAcc)"/>
+      <text x="${bx0}" y="${beamY + 70}" font-size="11" text-anchor="middle" fill="${C.accent}" font-weight="700">Ra ${Ra.toFixed(1)} kN</text>
+      <text x="${bx1}" y="${beamY + 70}" font-size="11" text-anchor="middle" fill="${C.accent}" font-weight="700">Rb ${Rb.toFixed(1)} kN</text>
+      <!-- span dim -->
+      <line x1="${bx0}" y1="${beamY - 80}" x2="${bx1}" y2="${beamY - 80}" stroke="${C.muted}" stroke-width="0.8" marker-start="url(#arrowAcc)" marker-end="url(#arrowAcc)"/>
+      <text x="${(bx0+bx1)/2}" y="${beamY - 86}" font-size="11" text-anchor="middle" fill="${C.muted}">span ${span_m} m</text>
       ${bmd}
     `, W, H);
   }
 
   function drawRoof({ span_m, pitch_deg }) {
-    const W = 400, H = 240, padX = 30;
+    // Engineering truss section: rafters, ridge, ceiling tie, king post,
+    // web members, wall plates, dimensions, pitch indicator.
+    const W = 460, H = 280, padX = 60;
     const apexX = W / 2;
-    const baseY = H - 50;
+    const baseY = H - 70;
     const half = (W - 2*padX) / 2;
     const pitchRad = pitch_deg * Math.PI / 180;
-    const rise = half * Math.tan(pitchRad);
-    const apexY = baseY - Math.min(rise, H - 80);
-    const slope = Math.sqrt(half**2 + rise**2);
+    const rise = Math.min(half * Math.tan(pitchRad), H - 110);
+    const apexY = baseY - rise;
+    const slope_m = Math.sqrt((span_m/2)**2 + Math.pow((span_m/2) * Math.tan(pitchRad), 2));
+    // Web members (fink-style): from quarter points up to rafters
+    const lq = padX + half/2, rq = W - padX - half/2;
+    const lqY = baseY, rqY = baseY;
+    // Mid-rafter points
+    const lmX = (padX + apexX)/2, lmY = (baseY + apexY)/2;
+    const rmX = (apexX + W - padX)/2, rmY = (apexY + baseY)/2;
     return svgWrap(`
-      <line x1="0" y1="${baseY + 12}" x2="${W}" y2="${baseY + 12}" stroke="${C.muted}" stroke-width="0.5"/>
-      <text x="6" y="${baseY + 26}" font-size="10" fill="${C.muted}">wall plate</text>
-      <polygon points="${padX},${baseY} ${apexX},${apexY} ${W-padX},${baseY}" fill="${C.fill}" opacity="0.6" stroke="${C.accent}" stroke-width="2"/>
-      <line x1="${padX}" y1="${baseY}" x2="${W-padX}" y2="${baseY}" stroke="${C.muted}" stroke-width="0.5" stroke-dasharray="3 3"/>
-      <text x="${apexX}" y="${apexY - 6}" font-size="11" text-anchor="middle" fill="${C.accent}">${pitch_deg}°</text>
-      <text x="${(padX + apexX) / 2 - 32}" y="${(baseY + apexY) / 2}" font-size="11" fill="${C.accent}">slope ≈ ${(slope/half * span_m / 2).toFixed(2)} m</text>
-      <text x="${apexX}" y="${baseY + 28}" font-size="10" text-anchor="middle" fill="${C.muted}">span ${span_m} m</text>
+      <!-- wall plates (top of masonry) -->
+      <rect x="${padX - 18}" y="${baseY}" width="36" height="14" fill="#b87a5a" stroke="#222"/>
+      <rect x="${W - padX - 18}" y="${baseY}" width="36" height="14" fill="#b87a5a" stroke="#222"/>
+      <text x="${padX}" y="${baseY + 26}" font-size="9" text-anchor="middle" fill="${C.muted}">wall plate</text>
+      <text x="${W - padX}" y="${baseY + 26}" font-size="9" text-anchor="middle" fill="${C.muted}">wall plate</text>
+      <!-- triangle envelope (timber colour fill) -->
+      <polygon points="${padX},${baseY} ${apexX},${apexY} ${W-padX},${baseY}" fill="#c89a5a" opacity="0.30" stroke="none"/>
+      <!-- ceiling tie (bottom chord) -->
+      <line x1="${padX}" y1="${baseY}" x2="${W - padX}" y2="${baseY}" stroke="#7a4a20" stroke-width="6"/>
+      <line x1="${padX}" y1="${baseY}" x2="${W - padX}" y2="${baseY}" stroke="#3a2010" stroke-width="1"/>
+      <!-- rafters (top chords) -->
+      <line x1="${padX}" y1="${baseY}" x2="${apexX}" y2="${apexY}" stroke="#7a4a20" stroke-width="6"/>
+      <line x1="${apexX}" y1="${apexY}" x2="${W - padX}" y2="${baseY}" stroke="#7a4a20" stroke-width="6"/>
+      <line x1="${padX}" y1="${baseY}" x2="${apexX}" y2="${apexY}" stroke="#3a2010" stroke-width="1"/>
+      <line x1="${apexX}" y1="${apexY}" x2="${W - padX}" y2="${baseY}" stroke="#3a2010" stroke-width="1"/>
+      <!-- king post -->
+      <line x1="${apexX}" y1="${baseY}" x2="${apexX}" y2="${apexY}" stroke="#7a4a20" stroke-width="5"/>
+      <!-- web members -->
+      <line x1="${lq}" y1="${lqY}" x2="${lmX}" y2="${lmY}" stroke="#7a4a20" stroke-width="4"/>
+      <line x1="${rq}" y1="${rqY}" x2="${rmX}" y2="${rmY}" stroke="#7a4a20" stroke-width="4"/>
+      <!-- ridge marker -->
+      <circle cx="${apexX}" cy="${apexY}" r="4" fill="${C.accent}" stroke="#222"/>
+      <text x="${apexX + 8}" y="${apexY + 4}" font-size="10" fill="${C.accent}">ridge</text>
+      <!-- pitch arc -->
+      <path d="M ${padX + 38} ${baseY} A 38 38 0 0 0 ${padX + 38 * Math.cos(pitchRad)} ${baseY - 38 * Math.sin(pitchRad)}" fill="none" stroke="${C.warn}" stroke-width="1.4"/>
+      <text x="${padX + 46}" y="${baseY - 8}" font-size="11" fill="${C.warn}" font-weight="700">${pitch_deg}°</text>
+      <!-- slope dim (along left rafter) -->
+      <text x="${(padX + apexX)/2 - 6}" y="${(baseY + apexY)/2 - 6}" font-size="10" text-anchor="end" fill="${C.accent}" font-weight="600">slope ${slope_m.toFixed(2)} m</text>
+      <!-- span dim arrow below -->
+      <line x1="${padX}" y1="${baseY + 44}" x2="${W - padX}" y2="${baseY + 44}" stroke="${C.accent}" stroke-width="1" marker-start="url(#arrowAcc)" marker-end="url(#arrowAcc)"/>
+      <text x="${apexX}" y="${baseY + 58}" font-size="11" text-anchor="middle" fill="${C.accent}" font-weight="700">span ${span_m} m</text>
+      <!-- rise dim (right) -->
+      <line x1="${W - padX + 24}" y1="${apexY}" x2="${W - padX + 24}" y2="${baseY}" stroke="${C.accent}" stroke-width="1" marker-start="url(#arrowAcc)" marker-end="url(#arrowAcc)"/>
+      <text x="${W - padX + 30}" y="${(apexY + baseY)/2 + 4}" font-size="10" fill="${C.accent}" font-weight="700">rise ${((span_m/2) * Math.tan(pitchRad)).toFixed(2)} m</text>
     `, W, H);
   }
 
   function drawExcav({ length_m, width_m, depth_m, soil }) {
-    const W = 400, H = 240, gnd = 70;
-    const wpx = Math.min(260, width_m * 80);
-    const dpx = Math.min(120, depth_m * 80);
-    const cx = W / 2;
-    const slopeOff = soil === 'rock' ? 4 : (soil === 'clay' ? 22 : 30);
+    // Engineering-style cross-section: ground line, hatched soil, sloped trench
+    // walls, properly-shaped spoil mound, worker silhouette for scale.
+    const W = 460, H = 280;
+    const skyH = 70;                    // sky / ambient zone above ground
+    const gnd = skyH;                   // ground line y
+    const cx = W / 2 - 40;               // trench centre offset left to leave room for spoil
+    // Pixel dimensions
+    const widthPx = Math.max(60, Math.min(160, width_m * 50));
+    const depthPx = Math.max(50, Math.min(150, depth_m * 60));
+    const slopeOff = soil === 'rock' ? 4 : soil === 'clay' ? 16 : soil === 'gravel' ? 22 : 28;
+    // Trench corner points
+    const x1 = cx - widthPx/2, x2 = cx + widthPx/2;
+    const y0 = gnd, y1 = gnd + depthPx;
+    const xb1 = x1 + slopeOff, xb2 = x2 - slopeOff;
+    // Soil hatch pattern
+    const soilColors = { sand: '#d8b070', gravel: '#a89878', mixed: '#8a6c4a', clay: '#6a4828', rock: '#7a7570', heaving: '#5a3818', collapsing: '#c8a060' };
+    const fill = soilColors[soil] || '#8a6c4a';
+    // Spoil mound — proper trapezoidal heap with rounded crown
+    const spoilX = x2 + 30;
+    const spoilBase = Math.min(120, widthPx * 1.4);
+    const spoilH = Math.max(20, depthPx * 0.55);
+    // Worker silhouette — 1.8 m scale reference
+    const worker = `
+      <g transform="translate(${x2 + 14}, ${gnd - 50}) scale(0.6)" opacity="0.7">
+        <circle cx="0" cy="0" r="6" fill="${C.ink}"/>
+        <line x1="0" y1="6" x2="0" y2="32" stroke="${C.ink}" stroke-width="3"/>
+        <line x1="0" y1="14" x2="-9" y2="22" stroke="${C.ink}" stroke-width="2"/>
+        <line x1="0" y1="14" x2="9" y2="22" stroke="${C.ink}" stroke-width="2"/>
+        <line x1="0" y1="32" x2="-7" y2="48" stroke="${C.ink}" stroke-width="3"/>
+        <line x1="0" y1="32" x2="7" y2="48" stroke="${C.ink}" stroke-width="3"/>
+      </g>
+      <text x="${x2 + 22}" y="${gnd - 40}" font-size="9" fill="${C.muted}">~1.8 m</text>
+    `;
     return svgWrap(`
-      <rect x="0" y="${gnd}" width="${W}" height="${H - gnd}" fill="${C.soil}" opacity=".5"/>
-      <line x1="0" y1="${gnd}" x2="${W}" y2="${gnd}" stroke="${C.muted}" stroke-width="0.5"/>
-      <text x="6" y="${gnd - 4}" font-size="10" fill="${C.muted}">NGL</text>
-      <polygon points="${cx-wpx/2},${gnd} ${cx-wpx/2 + slopeOff},${gnd + dpx} ${cx + wpx/2 - slopeOff},${gnd + dpx} ${cx + wpx/2},${gnd}" fill="#0c1a13" stroke="${C.accent}" stroke-width="2"/>
-      <text x="${cx}" y="${gnd + dpx/2 + 4}" font-size="11" text-anchor="middle" fill="${C.accent}" font-weight="600">excavation</text>
-      <text x="${cx}" y="${gnd + dpx + 18}" font-size="11" text-anchor="middle" fill="${C.muted}">${length_m}m × ${width_m}m × ${depth_m}m</text>
-      <ellipse cx="${cx + wpx/2 + 30}" cy="${gnd - 8}" rx="22" ry="10" fill="${C.soil}"/>
-      <text x="${cx + wpx/2 + 30}" y="${gnd - 18}" font-size="10" text-anchor="middle" fill="${C.muted}">spoil</text>
-      <text x="${cx - wpx/2 - 24}" y="${gnd + dpx + 14}" font-size="10" fill="${C.warn}">${soil}</text>
+      <defs>
+        <pattern id="soilHatch" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(0,0,0,.20)" stroke-width="1.2"/>
+        </pattern>
+        <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#1a3050" stop-opacity="0.4"/>
+          <stop offset="100%" stop-color="#1a3050" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <!-- sky / ambient -->
+      <rect x="0" y="0" width="${W}" height="${gnd}" fill="url(#skyGrad)"/>
+      <!-- soil mass -->
+      <rect x="0" y="${gnd}" width="${W}" height="${H - gnd}" fill="${fill}"/>
+      <rect x="0" y="${gnd}" width="${W}" height="${H - gnd}" fill="url(#soilHatch)"/>
+      <!-- ground line -->
+      <line x1="0" y1="${gnd}" x2="${W}" y2="${gnd}" stroke="#222" stroke-width="1.5"/>
+      <text x="6" y="${gnd - 5}" font-size="10" fill="${C.muted}">Natural ground level (NGL)</text>
+      <!-- trench (cut-out from soil) -->
+      <polygon points="${x1},${y0} ${xb1},${y1} ${xb2},${y1} ${x2},${y0}" fill="#0c1a13" stroke="#222" stroke-width="1"/>
+      <!-- slope angle indicator -->
+      <text x="${(x1 + xb1)/2 - 4}" y="${(y0 + y1)/2}" font-size="9" fill="${C.warn}" font-weight="600">slope</text>
+      <!-- dimension lines -->
+      <!-- width (top of trench) -->
+      <line x1="${x1}" y1="${y0 - 16}" x2="${x2}" y2="${y0 - 16}" stroke="${C.accent}" stroke-width="1"/>
+      <line x1="${x1}" y1="${y0 - 20}" x2="${x1}" y2="${y0 - 12}" stroke="${C.accent}"/>
+      <line x1="${x2}" y1="${y0 - 20}" x2="${x2}" y2="${y0 - 12}" stroke="${C.accent}"/>
+      <text x="${cx}" y="${y0 - 22}" font-size="11" text-anchor="middle" fill="${C.accent}" font-weight="700">${width_m} m</text>
+      <!-- depth -->
+      <line x1="${x2 + 24}" y1="${y0}" x2="${x2 + 24}" y2="${y1}" stroke="${C.accent}" stroke-width="1"/>
+      <line x1="${x2 + 20}" y1="${y0}" x2="${x2 + 28}" y2="${y0}" stroke="${C.accent}"/>
+      <line x1="${x2 + 20}" y1="${y1}" x2="${x2 + 28}" y2="${y1}" stroke="${C.accent}"/>
+      <text x="${x2 + 32}" y="${(y0 + y1)/2 + 4}" font-size="11" fill="${C.accent}" font-weight="700">${depth_m} m</text>
+      <!-- length annotation -->
+      <text x="${cx}" y="${y1 + 18}" font-size="10" text-anchor="middle" fill="${C.muted}">trench × ${length_m} m long (into page)</text>
+      <!-- spoil mound — proper heap shape -->
+      <path d="M ${spoilX - spoilBase/2} ${gnd}
+               Q ${spoilX - spoilBase/4} ${gnd - spoilH * 1.2}
+                 ${spoilX} ${gnd - spoilH}
+               Q ${spoilX + spoilBase/4} ${gnd - spoilH * 1.2}
+                 ${spoilX + spoilBase/2} ${gnd} Z"
+            fill="${fill}" stroke="rgba(0,0,0,.4)" stroke-width="0.8"/>
+      <path d="M ${spoilX - spoilBase/2} ${gnd}
+               Q ${spoilX - spoilBase/4} ${gnd - spoilH * 1.2}
+                 ${spoilX} ${gnd - spoilH}
+               Q ${spoilX + spoilBase/4} ${gnd - spoilH * 1.2}
+                 ${spoilX + spoilBase/2} ${gnd} Z"
+            fill="url(#soilHatch)"/>
+      <text x="${spoilX}" y="${gnd - spoilH - 6}" font-size="11" text-anchor="middle" fill="${C.muted}">spoil heap</text>
+      ${worker}
+      <text x="${W - 6}" y="${H - 6}" font-size="10" text-anchor="end" fill="${C.warn}" font-weight="600">soil: ${soil}</text>
     `, W, H);
   }
 
   function drawPipe({ diameter_mm, slope_pct, velocity_ms, full }) {
-    const W = 400, H = 240;
-    const cx = W / 2, cy = H / 2;
-    const r = Math.min(80, diameter_mm * 0.6);
-    const fillH = full ? r * 1.7 : r * 1.2; // visual: filled portion
+    // Two-panel: cross-section (left circle with water level) + side
+    // elevation (right) showing pipe in trench with slope and flow arrow.
+    const W = 460, H = 280;
+    // ---- cross-section (left) ----
+    const cx = 105, cy = 130;
+    const r = Math.min(60, Math.max(28, diameter_mm * 0.18));
+    const fillFrac = full ? 1.0 : 0.7;
+    const waterTop = cy + r - 2 * r * fillFrac;
+    // ---- side elevation (right) ----
+    const sx0 = 215, sx1 = W - 30, sy0 = 100;
+    const slopeRise = (sx1 - sx0) * slope_pct / 100;
+    const sy1 = sy0 + slopeRise;
+    const pipeT = Math.max(10, r * 0.6);  // visible bore on side view
     return svgWrap(`
-      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${C.fill}" stroke-width="3"/>
-      <clipPath id="pipefill"><rect x="${cx-r}" y="${cy + r - fillH}" width="${2*r}" height="${fillH}"/></clipPath>
-      <circle cx="${cx}" cy="${cy}" r="${r-1}" fill="#2a6cb5" opacity="0.5" clip-path="url(#pipefill)"/>
-      <text x="${cx}" y="${cy + 4}" font-size="13" text-anchor="middle" fill="${C.fill}" font-weight="700">Ø ${diameter_mm} mm</text>
-      <line x1="40" y1="${H - 30}" x2="${W - 40}" y2="${H - 30 - (slope_pct * 2)}" stroke="${C.accent}" stroke-width="2"/>
-      <text x="${W/2}" y="${H - 10}" font-size="10" text-anchor="middle" fill="${C.muted}">slope ${slope_pct}% · velocity ${velocity_ms.toFixed(2)} m/s</text>
+      <!-- ===== cross-section ===== -->
+      <text x="${cx}" y="40" font-size="11" text-anchor="middle" fill="${C.muted}" font-weight="600">SECTION A–A</text>
+      <circle cx="${cx}" cy="${cy}" r="${r + 6}" fill="#a8a8a4" stroke="#222"/>
+      <circle cx="${cx}" cy="${cy}" r="${r + 6}" fill="url(#hatchConcrete)"/>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="#0c1a13" stroke="#222"/>
+      <clipPath id="pipefill"><rect x="${cx-r}" y="${waterTop}" width="${2*r}" height="${2*r}"/></clipPath>
+      <circle cx="${cx}" cy="${cy}" r="${r - 0.5}" fill="#2a6cb5" opacity="0.7" clip-path="url(#pipefill)"/>
+      <line x1="${cx-r-2}" y1="${waterTop}" x2="${cx+r+2}" y2="${waterTop}" stroke="#6fb8ff" stroke-width="1" stroke-dasharray="3 2"/>
+      <text x="${cx + r + 8}" y="${waterTop + 3}" font-size="9" fill="#6fb8ff">${full ? 'full' : 'flow lvl'}</text>
+      <!-- diameter dim -->
+      <line x1="${cx - r}" y1="${cy + r + 22}" x2="${cx + r}" y2="${cy + r + 22}" stroke="${C.accent}" stroke-width="1" marker-start="url(#arrowAcc)" marker-end="url(#arrowAcc)"/>
+      <text x="${cx}" y="${cy + r + 36}" font-size="11" text-anchor="middle" fill="${C.accent}" font-weight="700">Ø ${diameter_mm} mm</text>
+      <!-- ===== side elevation ===== -->
+      <text x="${(sx0+sx1)/2}" y="40" font-size="11" text-anchor="middle" fill="${C.muted}" font-weight="600">ELEVATION</text>
+      <!-- ground line -->
+      <line x1="${sx0 - 5}" y1="60" x2="${sx1 + 5}" y2="60" stroke="#222" stroke-width="1.2"/>
+      <text x="${sx0}" y="56" font-size="9" fill="${C.muted}">NGL</text>
+      <!-- soil mass -->
+      <rect x="${sx0 - 5}" y="60" width="${sx1 - sx0 + 10}" height="${H - 60 - 30}" fill="#7a4f2b" opacity="0.6"/>
+      <rect x="${sx0 - 5}" y="60" width="${sx1 - sx0 + 10}" height="${H - 60 - 30}" fill="url(#hatchSoil)"/>
+      <!-- pipe (sloping) -->
+      <line x1="${sx0}" y1="${sy0 - pipeT/2}" x2="${sx1}" y2="${sy1 - pipeT/2}" stroke="#222" stroke-width="1"/>
+      <line x1="${sx0}" y1="${sy0 + pipeT/2}" x2="${sx1}" y2="${sy1 + pipeT/2}" stroke="#222" stroke-width="1"/>
+      <polygon points="${sx0},${sy0-pipeT/2} ${sx1},${sy1-pipeT/2} ${sx1},${sy1+pipeT/2} ${sx0},${sy0+pipeT/2}" fill="#a8a8a4"/>
+      <polygon points="${sx0},${sy0-pipeT/2} ${sx1},${sy1-pipeT/2} ${sx1},${sy1+pipeT/2} ${sx0},${sy0+pipeT/2}" fill="url(#hatchConcrete)" opacity="0.6"/>
+      <!-- flow arrow inside pipe -->
+      <line x1="${sx0 + 14}" y1="${sy0}" x2="${sx1 - 14}" y2="${sy1}" stroke="#6fb8ff" stroke-width="2" marker-end="url(#arrowAcc)"/>
+      <text x="${(sx0+sx1)/2}" y="${(sy0+sy1)/2 - 8}" font-size="10" text-anchor="middle" fill="#6fb8ff" font-weight="600">flow</text>
+      <!-- horizontal reference -->
+      <line x1="${sx0}" y1="${sy0}" x2="${sx1}" y2="${sy0}" stroke="${C.muted}" stroke-width="0.6" stroke-dasharray="3 3"/>
+      <!-- slope angle indicator -->
+      <path d="M ${sx0 + 38} ${sy0} A 38 38 0 0 1 ${sx0 + 38} ${sy0 + 0.001}" fill="none" stroke="${C.warn}"/>
+      <text x="${sx0 + 50}" y="${sy0 + 12}" font-size="11" fill="${C.warn}" font-weight="700">${slope_pct}%</text>
+      <!-- velocity callout -->
+      <text x="${sx1}" y="${H - 12}" font-size="10" text-anchor="end" fill="${C.accent}" font-weight="600">v = ${velocity_ms.toFixed(2)} m/s</text>
     `, W, H);
   }
 
   function drawInsulation({ thickness_mm, R, productName }) {
-    const W = 400, H = 220;
-    const tpx = Math.min(180, thickness_mm * 0.6);
-    const wallX = 80, wallW = 30;
+    // Wall buildup section: external plaster, brick, cavity, insulation,
+    // inner brick, internal plaster — labelled with thicknesses, with
+    // outside/inside arrows and dimension chain.
+    const W = 460, H = 280;
+    const top = 40, bot = H - 60;
+    let x = 40;
+    const layers = [
+      { w: 12, fill: '#d8c4a0', hatch: null,             label: 'plaster',  sub: '12 mm' },
+      { w: 28, fill: '#b87a5a', hatch: null,             label: 'brick',    sub: '110 mm' },
+      { w: 18, fill: '#0c1a13', hatch: null,             label: 'cavity',   sub: '50 mm' },
+      { w: Math.min(170, Math.max(30, thickness_mm * 0.7)), fill: '#f5d56a', hatch: 'url(#hatchInsul)', label: 'insulation', sub: thickness_mm + ' mm' },
+      { w: 28, fill: '#b87a5a', hatch: null,             label: 'brick',    sub: '110 mm' },
+      { w: 12, fill: '#e8d8b8', hatch: null,             label: 'plaster',  sub: '12 mm' },
+    ];
+    let parts = '';
+    let dimChain = '';
+    let labels = '';
+    for (const L of layers) {
+      parts += `<rect x="${x}" y="${top}" width="${L.w}" height="${bot - top}" fill="${L.fill}" stroke="#222" stroke-width="0.5"/>`;
+      if (L.hatch) parts += `<rect x="${x}" y="${top}" width="${L.w}" height="${bot - top}" fill="${L.hatch}"/>`;
+      // dim ticks
+      dimChain += `<line x1="${x}" y1="${bot + 12}" x2="${x}" y2="${bot + 26}" stroke="${C.muted}" stroke-width="0.6"/>`;
+      // rotated label inside layer
+      if (L.w >= 14) {
+        labels += `<text x="${x + L.w/2}" y="${(top+bot)/2}" font-size="10" text-anchor="middle" fill="#111" font-weight="600" transform="rotate(-90 ${x + L.w/2} ${(top+bot)/2})">${L.label}</text>`;
+        labels += `<text x="${x + L.w/2}" y="${(top+bot)/2 + 14}" font-size="8" text-anchor="middle" fill="#111" transform="rotate(-90 ${x + L.w/2} ${(top+bot)/2 + 14})">${L.sub}</text>`;
+      }
+      x += L.w;
+    }
+    const xEnd = x;
+    dimChain += `<line x1="${xEnd}" y1="${bot + 12}" x2="${xEnd}" y2="${bot + 26}" stroke="${C.muted}" stroke-width="0.6"/>`;
+    dimChain += `<line x1="40" y1="${bot + 20}" x2="${xEnd}" y2="${bot + 20}" stroke="${C.accent}" stroke-width="1" marker-start="url(#arrowAcc)" marker-end="url(#arrowAcc)"/>`;
     return svgWrap(`
-      <rect x="${wallX}" y="40" width="${wallW}" height="${H - 80}" fill="${C.fill}"/>
-      <text x="${wallX + wallW/2}" y="${H - 20}" font-size="10" text-anchor="middle" fill="${C.muted}">wall</text>
-      <rect x="${wallX + wallW}" y="40" width="${tpx}" height="${H - 80}" fill="${C.warn}" opacity=".55" stroke="${C.warn}"/>
-      <text x="${wallX + wallW + tpx/2}" y="${H/2 - 6}" font-size="11" text-anchor="middle" fill="${C.warn}" font-weight="700">${thickness_mm} mm</text>
-      <text x="${wallX + wallW + tpx/2}" y="${H/2 + 10}" font-size="10" text-anchor="middle" fill="${C.muted}">R = ${R}</text>
-      <text x="${wallX + wallW + tpx + 10}" y="60" font-size="11" fill="${C.accent}">${productName}</text>
+      ${parts}
+      ${labels}
+      ${dimChain}
+      <!-- outside / inside arrows -->
+      <text x="40" y="${top - 10}" font-size="10" fill="${C.muted}">← outside</text>
+      <text x="${xEnd}" y="${top - 10}" font-size="10" text-anchor="end" fill="${C.muted}">inside →</text>
+      <!-- temperature gradient indicator -->
+      <line x1="40" y1="${top + 6}" x2="${xEnd}" y2="${top + 6}" stroke="url(#hatchSteel)" stroke-width="0" />
+      <line x1="40" y1="${top - 4}" x2="${xEnd}" y2="${top - 4}" stroke="${C.muted}" stroke-width="0.5" stroke-dasharray="2 3"/>
+      <!-- product / R-value callout -->
+      <rect x="${xEnd + 14}" y="${top + 30}" width="120" height="60" rx="6" fill="rgba(0,0,0,.4)" stroke="${C.accent}" stroke-width="1"/>
+      <text x="${xEnd + 74}" y="${top + 50}" font-size="11" text-anchor="middle" fill="${C.accent}" font-weight="700">R = ${R}</text>
+      <text x="${xEnd + 74}" y="${top + 68}" font-size="9" text-anchor="middle" fill="${C.muted}">m²·K/W</text>
+      <text x="${xEnd + 74}" y="${top + 84}" font-size="9" text-anchor="middle" fill="${C.fill}">${productName}</text>
+      <!-- total thickness -->
+      <text x="${(40 + xEnd)/2}" y="${bot + 40}" font-size="11" text-anchor="middle" fill="${C.accent}" font-weight="700">total ${(xEnd - 40)} px buildup</text>
     `, W, H);
   }
 
@@ -1338,18 +1636,23 @@ window.NHBRC_CALCULATORS = (function () {
       <line x1="${x1-3}" y1="${y1-3}" x2="${x1+3}" y2="${y1+3}" stroke="${color}"/>
       <line x1="${x2-3}" y1="${y2-3}" x2="${x2+3}" y2="${y2+3}" stroke="${color}"/>
       <text x="${(x1+x2)/2}" y="${(y1+y2)/2 - 4}" font-size="10" text-anchor="middle" fill="${color}" font-weight="600">${text}</text>`;
+    // Title — wrapped to 2 lines if long, never clipped
+    const titleSvg = title ? `
+      <foreignObject x="0" y="2" width="${W}" height="32">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="font:11px system-ui,sans-serif;color:${C.muted};text-align:center;line-height:1.3;padding:0 8px">${title}</div>
+      </foreignObject>` : '';
     return svgWrap(`
-      ${title ? `<text x="${W/2}" y="14" font-size="11" text-anchor="middle" fill="${C.muted}">${title}</text>` : ''}
+      ${titleSvg}
       ${poly([fbl, ftl, btl, [bbr[0], bbr[1] - Hgt]], topColor)}
+      <polygon points="${[fbl, ftl, btl, [bbr[0], bbr[1] - Hgt]].map(p=>p.join(',')).join(' ')}" fill="url(#gradTop)"/>
       ${poly([fbr, ftr, [bbr[0], bbr[1] - Hgt], bbr], sideColor)}
       ${poly([fbl, fbr, ftr, ftl], frontColor)}
+      <polygon points="${[fbl, fbr, ftr, ftl].map(p=>p.join(',')).join(' ')}" fill="url(#gradFront)"/>
       ${patternOverlay}
       ${frontLabel ? `<text x="${(fbl[0]+ftr[0])/2}" y="${(fbl[1]+ftr[1])/2}" font-size="11" text-anchor="middle" fill="rgba(0,0,0,.7)" font-weight="700">${frontLabel}</text>` : ''}
-      ${topLabel ? `<text x="${(ftl[0]+btr[0])/2}" y="${(ftl[1]+btr[1])/2 + 3}" font-size="9" text-anchor="middle" fill="rgba(0,0,0,.7)">${topLabel}</text>` : ''}
-      ${sideLabel ? `<text x="${(ftr[0]+bbr[0])/2 + 4}" y="${(ftr[1]+bbr[1])/2 + 3}" font-size="9" fill="rgba(0,0,0,.7)">${sideLabel}</text>` : ''}
-      ${dim(fbl[0], fbl[1] + 14, fbr[0], fbr[1] + 14, length_mm + ' mm')}
-      ${dim(fbr[0] + 8, ftr[1], fbr[0] + 8, fbr[1], height_mm + ' mm')}
-      ${dim(bbr[0] - 4, bbr[1] - Hgt - 16, fbr[0] + 4, ftr[1] - 16, depth_mm + ' mm', C.warn)}
+      ${dim(fbl[0], fbl[1] + 18, fbr[0], fbr[1] + 18, length_mm + ' mm')}
+      ${dim(fbr[0] + 14, ftr[1], fbr[0] + 14, fbr[1], height_mm + ' mm')}
+      ${dim(bbr[0] - 2, bbr[1] - Hgt - 18, fbr[0] + 6, ftr[1] - 18, depth_mm + ' mm', C.warn)}
     `, W, H);
   }
 
