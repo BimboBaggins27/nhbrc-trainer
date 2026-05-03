@@ -1459,12 +1459,18 @@
 
   function checklistsView(body) {
     const stages = window.NHBRC_FORMS?.INSPECTION_STAGES || {};
+    const suppliers = window.NHBRC_FORMS?.SUPPLIER_CHECKLISTS || {};
     let active = 'foundation';
     function render() {
       body.innerHTML = `
-        <p class="meta">Tick off each item per stage. Generate one PDF per stage, OR fill all stages then export the combined Project Inspection File at the bottom.</p>
+        <p class="meta">Tick off each item per stage. Every line cites its source (NHBRC HBM volume, SANS clause, or supplier TDS). Hold-points are flagged — work cannot proceed until signed.</p>
+        <div class="section-title" style="margin-top:6px">NHBRC inspection stages</div>
         <div class="filter-row">
           ${Object.entries(stages).map(([k, s]) => `<button class="chip-btn ${active===k?'active':''}" data-k="${k}">${escapeHtml(s.title)}</button>`).join('')}
+        </div>
+        <div class="section-title" style="margin-top:14px">Supplier QC checklists</div>
+        <div class="filter-row">
+          ${Object.entries(suppliers).map(([k, s]) => `<button class="chip-btn ${active===k?'active':''}" data-k="${k}">${escapeHtml(s.title)}</button>`).join('')}
         </div>
         <div id="chkBody"></div>
 
