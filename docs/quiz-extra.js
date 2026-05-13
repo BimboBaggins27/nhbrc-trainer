@@ -65,6 +65,10 @@ window.NHBRC_QUIZ_EXTRA = {
     { q: "Pr.Arch is registered with:", opts:["ECSA","SACAP","SACNASP","CIDB"], a:1, why:"South African Council for the Architectural Profession (SACAP)." },
     { q: "Geotechnical investigation on dolomite must be by:", opts:["Builder","NHBRC inspector","Pr.Sci.Nat / SACNASP","SABS"], a:2, why:"Reg F3 + 2008 definitions — competent person, typically SACNASP-registered." },
     { q: "A registered Pr.Eng (Civil) on a structural design takes:", opts:["No responsibility","Statutory responsibility for the design under the regs","Marketing role","Site labour role"], a:1, why:"Pr.Eng who designs/inspects accepts statutory responsibility for that scope." },
+    { q: "SACPCMP registers:", opts:["Architects","Engineers","Construction H&S agents / managers / officers","Quantity surveyors"], a:2, why:"South African Council for the Project & Construction Management Professions — Pr CHSA / Pr CHSM / CHSO. Required by Construction Reg 5/8 appointments." },
+    { q: "SACQSP registers:", opts:["Engineers","Architects","Quantity surveyors","Scientists"], a:2, why:"South African Council for the Quantity Surveying Profession — Pr.QS, Pr.CQS." },
+    { q: "If a competent person identifies non-compliance during construction:", opts:["Continue and ignore","Issue a written warning and may withhold Form 3 until corrected","Tell only the owner verbally","Stop the project forever"], a:1, why:"Reg A19(8) — CP must record non-compliance in writing and cannot certify compliance (Form 3) until resolved." },
+    { q: "Form 2 attaches:", opts:["Owner's ID only","Plans only","Each CP's signed acceptance + proof of council registration","Local authority approval"], a:2, why:"Form 2 records the appointment and each CP's signed acceptance with proof of statutory registration." },
   ],
 
   structural: [
@@ -89,6 +93,10 @@ window.NHBRC_QUIZ_EXTRA = {
     { q: "Min habitable room area:", opts:["4 m²","6 m²","8 m²","10 m²"], a:1, why:"Min 6 m² (Part C habitable-room floor)." },
     { q: "Sloped ceiling — 2.4 m must apply:", opts:["At one point","Over whole area","Over half the floor area, no point < 2.1 m","At doorway only"], a:2, why:"Sloped ceilings: 2.4 over ≥ 50%, never below 2.1 m." },
     { q: "Min passage width in dwelling:", opts:["600 mm","750 mm","900 mm","1100 mm"], a:2, why:"≥ 900 mm passage. Larger occupancies wider per Part T." },
+    { q: "'Habitable room' in Part C means:", opts:["Any enclosed space","Rooms regularly occupied (lounge, bedroom, dining) — excludes WC / store / bathroom","Living room only","Bedroom only"], a:1, why:"Habitable = rooms used for living, eating, sleeping. WC / bathroom / kitchen / store / passage are non-habitable." },
+    { q: "Min clear width of internal door to a habitable room:", opts:["600 mm","750 mm","900 mm","1100 mm"], a:1, why:"≥ 750 mm clear opening — also the wheelchair-accessibility minimum per Part S." },
+    { q: "Min height of internal door:", opts:["1.8 m","1.97 m","2.4 m","2.7 m"], a:1, why:"≥ 1.97 m (effectively 2.0 m) clear opening height standard for internal doors." },
+    { q: "Garage / outbuilding ceiling height (non-habitable):", opts:["1.8 m","2.1 m","2.4 m","2.7 m"], a:1, why:"≥ 2.1 m for non-habitable spaces — same as kitchen / passage / WC per Part C." },
   ],
 
   // ---------- High-yield NHBRC-test foundations ----------
@@ -164,6 +172,11 @@ window.NHBRC_QUIZ_EXTRA = {
     { q: "Garage-to-house dividing wall:", opts:["Plywood","Studwork only","30-min FR + self-closing FR door","Glass"], a:2, why:"≥ 30-min FR construction + 30-min self-closing FR door." },
     { q: "Smoke alarm best practice in dwelling:", opts:["Not required","One per bedroom + each storey + escape route","Only in commercial","Stoves only"], a:1, why:"Smoke detector in each bedroom, on each storey, on escape route." },
     { q: "Travel distance dead-end (single exit) in dwelling typically:", opts:["10 m","20 m","30 m","100 m"], a:1, why:"≈ 20 m one-way in dwelling; multiple exits allow more." },
+    { q: "Fire resistance is tested per:", opts:["SANS 10100","SANS 10160","SANS 10177-2","SANS 10400 only"], a:2, why:"SANS 10177-2 — fire-resistance test for building elements. 30 / 60 / 90 / 120 / 240 minutes." },
+    { q: "Compartment wall between two attached H4 dwellings (semi-detached) min FR:", opts:["No requirement","30-min","60-min","90-min"], a:2, why:"≥ 60-min FR full height between attached H4 dwellings (party-wall fire separation)." },
+    { q: "Habitable basement / cellar requires:", opts:["No special escape","Two independent means of escape","Just a window","Sprinklers"], a:1, why:"Part T — habitable basement / occupied below-ground space needs two independent escape routes." },
+    { q: "Self-closing fire door — closer required:", opts:["Optional","On every FR door","Only commercial","Only at boundaries"], a:1, why:"Every FR door must be self-closing — door-closer (overhead or floor-spring). FR door without closer = non-compliant." },
+    { q: "Roof void above compartment wall — fire-stop:", opts:["Not required","Compartment wall must continue up to underside of roof covering","Stop at ceiling line","Glass barrier"], a:1, why:"Fire-stop continuous through ceiling void to underside of roof — otherwise fire bypasses the wall in the void." },
   ],
 
   lightvent: [
@@ -172,6 +185,12 @@ window.NHBRC_QUIZ_EXTRA = {
     { q: "Bathroom mechanical extraction (no opening) ≈:", opts:["3 ach","6 ach","12 ach","20 ach"], a:2, why:"≈ 12 ach for windowless bathroom/WC mechanical extraction." },
     { q: "Internal habitable room with no external wall must:", opts:["Be closed off","Have mechanical / borrowed light + vent","Be ignored","Glass roof only"], a:1, why:"Mechanical or 'borrowed' light/vent meeting Part O." },
     { q: "Sill height + balustrade trigger above floor level for upper-floor windows:", opts:["No limit","Always 1 m","Always 1.2 m","Restrictor / guard if external drop > 1 m"], a:3, why:"Restrictor or guard at upper-level windows where external drop > 1 m." },
+    { q: "Natural-light opening must:", opts:["Face into another room","Face external air (or borrowed light meeting limits)","Face roof void","Be operable"], a:1, why:"Part O — light openings face external air. 'Borrowed light' from adjacent habitable space is allowed but subject to area / distance limits." },
+    { q: "Borrowed light from adjacent room — allowed when:", opts:["Never","Adjacent room has compliant external light + opening between rooms ≥ specified area","Always","Only commercial"], a:1, why:"Borrowed light: adjacent room must have full compliant natural light + a permanent opening ≥ specified area between rooms." },
+    { q: "Skylight contribution to natural light:", opts:["Doesn't count","Counts if open to external air, glazed to admit daylight","Doubled","Halved"], a:1, why:"Skylight glazed to external air counts toward the 10 % floor area for natural light." },
+    { q: "Kitchen with gas appliances — ventilation:", opts:["Optional","Natural opening + permanent high-level vent OR mechanical extract","Window only","Door only"], a:1, why:"Combustion gas appliance — permanent high-level vent OR mechanical extraction. SANS 10087 + Part O." },
+    { q: "WC without external window — extraction:", opts:["Not required","Mechanical extract ≥ 12 ach + run-on timer","Open door","Fan optional"], a:1, why:"Internal WC — mechanical extraction ≥ 12 air-changes / hour with run-on timer (typical 15 min)." },
+    { q: "Habitable room ventilation openings — operable from:", opts:["Outside only","Inside, by occupant, without tools","Roof","Locked permanently"], a:1, why:"Operable from inside, by the occupant, without tools (egress + operation requirement)." },
   ],
 
   stairs: [
@@ -182,6 +201,10 @@ window.NHBRC_QUIZ_EXTRA = {
     { q: "Handrail height above pitch line:", opts:["750 mm","900 mm","1.0 m","1.1 m"], a:1, why:"≈ 900 mm domestic; 1.0 m at landings/balconies > 1 m drop." },
     { q: "Balustrade required when level change exceeds:", opts:["300","600","1.0 m","1.5 m"], a:2, why:"> 1.0 m drop." },
     { q: "Max gap in balustrade (sphere ø):", opts:["50","100 mm","150","200"], a:1, why:"100 mm sphere must not pass through." },
+    { q: "Min unobstructed stair width — domestic:", opts:["600 mm","750 mm","900 mm","1.1 m"], a:2, why:"≥ 900 mm clear width for domestic stair (Part M)." },
+    { q: "Landing required where:", opts:["Stair > 18 risers, or change of direction","Never in domestic","Only at top","Only at bottom"], a:0, why:"Landing required at every change of direction AND where straight flight exceeds ~18 risers." },
+    { q: "Open risers in a domestic stair — permitted if:", opts:["Never","100 mm sphere cannot pass through the open riser","Always","Only with handrail"], a:1, why:"Open risers permitted in dwellings provided a 100 mm sphere cannot pass through — same child-safety rule as balustrades." },
+    { q: "Tapered (winder) tread minimum at the narrow end:", opts:["No limit","125 mm","250 mm","Same as going"], a:1, why:"At the narrow end of a winder tread the going must be ≥ 125 mm; at 270 mm walk-line the going meets the normal 250 mm minimum." },
   ],
 
   energy: [
@@ -191,6 +214,11 @@ window.NHBRC_QUIZ_EXTRA = {
     { q: "R-value measures:", opts:["Air leakage","Thermal RESISTANCE — higher better","Sound","Light"], a:1, why:"R = m²K/W; higher R = better insulation." },
     { q: "Roof R-value targets generally INCREASE as zones go from:", opts:["Coastal warm to cold interior","Cold to warm","No relationship","Random"], a:0, why:"Cold interior zones (e.g. Highveld) → higher roof R." },
     { q: "Wall non-compliance compensated by:", opts:["More roof insulation","Cavity / lining insulation OR rational route","Reflective paint only","Bigger windows"], a:1, why:"Compensate with cavity/lining insulation or XA rational route." },
+    { q: "Typical roof R-value target for a domestic dwelling:", opts:["R 1.5","R 2.7","R 3.7","R 5.0"], a:2, why:"≈ R 3.7 m²K/W for roof in most SA climate zones (SANS 10400-XA Table 4). E.g. 135 mm Aerolite glasswool achieves this." },
+    { q: "Hot-water cylinder insulation — min added jacket / sleeve:", opts:["No requirement","≥ 50 mm","≥ 75 mm","≥ 150 mm"], a:2, why:"≥ 75 mm geyser-blanket insulation typical to meet XA standing-loss limit (SANS 10254 + XA)." },
+    { q: "Glazing area limit (XA deemed-to-satisfy route):", opts:["No limit","≤ 15 % of net floor area total","≤ 50 %","≤ 5 %"], a:1, why:"Deemed-to-satisfy: total glazing ≤ 15 % of net floor area, with further per-orientation limits. Rational designs may exceed using shading + glass spec." },
+    { q: "Hot-water pipes — first 3 m insulated:", opts:["Optional","Required from cylinder to first outlet","Only if buried","Only outside"], a:1, why:"SANS 10400-XA — first 3 m of hot-water pipe from cylinder insulated to reduce standing losses." },
+    { q: "Air-tightness blower-door test — required when:", opts:["Always","Rational-design route as evidence","Never","Only commercial"], a:1, why:"Deemed-to-satisfy route does not require blower-door; rational design uses it to evidence performance." },
   ],
 
   process: [
@@ -202,6 +230,9 @@ window.NHBRC_QUIZ_EXTRA = {
     { q: "Builder must notify NHBRC for inspection:", opts:["After completion","Once at enrolment","At each stage that needs sign-off","Quarterly"], a:2, why:"Per stage hold-point — foundation, DPC, slab, roof, drains, completion." },
     { q: "Builder builds without enrolment — offence under:", opts:["Act 103/1977 only","Section 21 Act 95/1998","Section 14 Act 103/1977","No offence"], a:1, why:"Section 21 of Housing Consumers Protection Measures Act 95/1998." },
     { q: "Owner-builder must:", opts:["Skip enrolment","Apply for owner-builder exemption from NHBRC","Hire NHBRC builder","SABS approval"], a:1, why:"Owner-builder exemption granted by NHBRC; home still recorded." },
+    { q: "Foundation NHBRC inspection — timing:", opts:["After concrete pour","BEFORE concrete is poured (excavation + reinforcement inspected first)","Anytime","Only on request"], a:1, why:"Hold-point: foundation is inspected with reinforcement in place but BEFORE concrete is poured. Concrete after sign-off." },
+    { q: "Plan approval lapsed (12 months passed, no commencement) — extension:", opts:["Not possible","Reg A12 — further 12 months on written application to BCO","Automatic","SABS approval"], a:1, why:"Reg A12 allows a further 12-month extension on written application to the Building Control Officer, motivated." },
+    { q: "Builder absconds mid-project — owner's recourse via NHBRC warranty:", opts:["No recourse","Warranty fund may step in for completion of major structural elements within enrolment cover","Owner liable for all loss","Insurance only"], a:1, why:"Housing Consumers Protection Measures Act 95/1998 — warranty fund covers major structural defects + completion in defined circumstances when registered builder cannot complete." },
   ],
 
   // ---------- New Part-specific module quizzes ----------
