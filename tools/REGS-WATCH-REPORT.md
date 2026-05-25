@@ -1,6 +1,6 @@
-# Regulations watch — 2026-05-18
+# Regulations watch — 2026-05-25
 
-Sources scanned: 7. Detected 5 change(s), 1 error(s).
+Sources scanned: 7. Detected 6 change(s), 1 error(s).
 
 ## Changes detected
 
@@ -8,9 +8,11 @@ Sources scanned: 7. Detected 5 change(s), 1 error(s).
    https://www.nhbrc.org.za/
 🔄 **NHBRC — Publications** — content changed (Δ +0 bytes, 80→80 keyword hits)
    https://www.nhbrc.org.za/publications/
-🔄 **SABS Webstore — SANS 10400 catalogue** — content changed (Δ -10 bytes, 63→63 keyword hits)
+🔄 **Government Gazette — Subordinate Legislation index** — content changed (Δ -258 bytes, 37→35 keyword hits)
+   https://www.gov.za/documents/notices?keys=building+regulations
+🔄 **SABS Webstore — SANS 10400 catalogue** — content changed (Δ +4 bytes, 63→63 keyword hits)
    https://store.sabs.co.za/sans-10400-the-application-of-the-national-building-regulations
-🔄 **Engineering News — construction tag** — content changed (Δ +9,871 bytes, 0→0 keyword hits)
+🔄 **Engineering News — construction tag** — content changed (Δ -11,656 bytes, 0→0 keyword hits)
    https://www.engineeringnews.co.za/page/construction
 🔄 **Cape Town building plans page (LA reference)** — content changed (Δ +0 bytes, 0→0 keyword hits)
    https://www.capetown.gov.za/Family%20and%20home/find-a-municipal-service/Building-plans
@@ -19,4 +21,4 @@ Sources scanned: 7. Detected 5 change(s), 1 error(s).
 
 ## Fetch errors
 
-❌ Government Gazette — Subordinate Legislation index — FETCH-ERROR: <urlopen error timed out>
+❌ sans10400.co.za blog index — FETCH-ERROR: <urlopen error timed out>
