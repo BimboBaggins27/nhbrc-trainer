@@ -1,44 +1,44 @@
 {
-  "lastRun": "2026-07-06",
+  "lastRun": "2026-07-13",
   "sources": {
     "NHBRC \u2014 homepage / news block": {
       "len": 180164,
-      "hash": "8f0ee38fa4de6c04",
+      "hash": "bcd2897ff7640e28",
       "keywordHits": 4,
       "headlinesSample": [
-        "NHBRC",
-        "nhbrc"
+        "nhbrc",
+        "NHBRC"
       ],
       "url": "https://www.nhbrc.org.za/",
-      "fetchedAt": "2026-07-06",
+      "fetchedAt": "2026-07-13",
       "status": 200
     },
     "NHBRC \u2014 Publications": {
       "len": 100065,
-      "hash": "734f21a4a21a28dd",
+      "hash": "f77b198a47351af7",
       "keywordHits": 80,
       "headlinesSample": [
-        "NHBRC",
-        "nhbrc"
+        "nhbrc",
+        "NHBRC"
       ],
       "url": "https://www.nhbrc.org.za/publications/",
-      "fetchedAt": "2026-07-06",
+      "fetchedAt": "2026-07-13",
       "status": 200
     },
     "Government Gazette \u2014 Subordinate Legislation index": {
-      "len": 80134,
-      "hash": "cf1db22e8971cb4b",
-      "keywordHits": 30,
+      "len": 78544,
+      "hash": "72d1dcde45d08eb5",
+      "keywordHits": 33,
       "headlinesSample": [
         "Government Gazette"
       ],
       "url": "https://www.gov.za/documents/notices?keys=building+regulations",
-      "fetchedAt": "2026-06-15",
+      "fetchedAt": "2026-07-13",
       "status": 200
     },
     "SABS Webstore \u2014 SANS 10400 catalogue": {
-      "len": 201287,
-      "hash": "753872d5a53bbdc4",
+      "len": 200267,
+      "hash": "d98b0de44c65d5ca",
       "keywordHits": 63,
       "headlinesSample": [
         "sans 10400",
@@ -46,16 +46,16 @@
         "national building regulation"
       ],
       "url": "https://store.sabs.co.za/sans-10400-the-application-of-the-national-building-regulations",
-      "fetchedAt": "2026-07-06",
+      "fetchedAt": "2026-07-13",
       "status": 200
     },
     "Engineering News \u2014 construction tag": {
-      "len": 395443,
-      "hash": "517a1847316d0276",
+      "len": 398762,
+      "hash": "4a693721fbe011a5",
       "keywordHits": 0,
       "headlinesSample": [],
       "url": "https://www.engineeringnews.co.za/page/construction",
-      "fetchedAt": "2026-07-06",
+      "fetchedAt": "2026-07-13",
       "status": 200
     },
     "sans10400.co.za blog index": {
@@ -63,20 +63,20 @@
       "hash": "de181ace23ff11b8",
       "keywordHits": 80,
       "headlinesSample": [
-        "sans10400",
-        "nhbrc"
+        "nhbrc",
+        "sans10400"
       ],
       "url": "https://www.sans10400.co.za/wp-sitemap-posts-post-1.xml",
-      "fetchedAt": "2026-07-06",
+      "fetchedAt": "2026-07-13",
       "status": 200
     },
     "Cape Town building plans page (LA reference)": {
-      "len": 127947,
-      "hash": "73b5a8a9aed13453",
+      "len": 154568,
+      "hash": "7d67a70efc105e9e",
       "keywordHits": 0,
       "headlinesSample": [],
       "url": "https://www.capetown.gov.za/Family%20and%20home/find-a-municipal-service/Building-plans",
-      "fetchedAt": "2026-07-06",
+      "fetchedAt": "2026-07-13",
       "status": 200
     }
   }
