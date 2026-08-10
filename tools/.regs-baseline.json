@@ -1,28 +1,28 @@
 {
-  "lastRun": "2026-08-03",
+  "lastRun": "2026-08-10",
   "sources": {
     "NHBRC \u2014 homepage / news block": {
       "len": 180671,
-      "hash": "ab380bc8c58a947d",
+      "hash": "5973e08d1a818b33",
       "keywordHits": 4,
       "headlinesSample": [
         "nhbrc",
         "NHBRC"
       ],
       "url": "https://www.nhbrc.org.za/",
-      "fetchedAt": "2026-08-03",
+      "fetchedAt": "2026-08-10",
       "status": 200
     },
     "NHBRC \u2014 Publications": {
       "len": 100065,
-      "hash": "6c88478007d74d51",
+      "hash": "5f84afbf2c4bb579",
       "keywordHits": 80,
       "headlinesSample": [
         "nhbrc",
         "NHBRC"
       ],
       "url": "https://www.nhbrc.org.za/publications/",
-      "fetchedAt": "2026-08-03",
+      "fetchedAt": "2026-08-10",
       "status": 200
     },
     "Government Gazette \u2014 Subordinate Legislation index": {
@@ -37,25 +37,25 @@
       "status": 200
     },
     "SABS Webstore \u2014 SANS 10400 catalogue": {
-      "len": 200326,
-      "hash": "b7d66ce1afcffdc5",
+      "len": 200292,
+      "hash": "18772048fe35c958",
       "keywordHits": 63,
       "headlinesSample": [
+        "sans 10400",
         "SANS 10400",
-        "national building regulation",
-        "sans 10400"
+        "national building regulation"
       ],
       "url": "https://store.sabs.co.za/sans-10400-the-application-of-the-national-building-regulations",
-      "fetchedAt": "2026-08-03",
+      "fetchedAt": "2026-08-10",
       "status": 200
     },
     "Engineering News \u2014 construction tag": {
-      "len": 395430,
-      "hash": "36fa0f6bc0da628e",
+      "len": 390560,
+      "hash": "e5dde7fc2b5b4cdc",
       "keywordHits": 0,
       "headlinesSample": [],
       "url": "https://www.engineeringnews.co.za/page/construction",
-      "fetchedAt": "2026-08-03",
+      "fetchedAt": "2026-08-10",
       "status": 200
     },
     "sans10400.co.za blog index": {
@@ -67,16 +67,16 @@
         "nhbrc"
       ],
       "url": "https://www.sans10400.co.za/wp-sitemap-posts-post-1.xml",
-      "fetchedAt": "2026-08-03",
+      "fetchedAt": "2026-08-10",
       "status": 200
     },
     "Cape Town building plans page (LA reference)": {
-      "len": 156339,
-      "hash": "d1fd2cb478fdf00d",
+      "len": 156340,
+      "hash": "a861b8798ab33425",
       "keywordHits": 0,
       "headlinesSample": [],
       "url": "https://www.capetown.gov.za/Family%20and%20home/find-a-municipal-service/Building-plans",
-      "fetchedAt": "2026-08-03",
+      "fetchedAt": "2026-08-10",
       "status": 200
     }
   }
