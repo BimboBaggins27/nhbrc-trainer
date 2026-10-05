@@ -1,61 +1,61 @@
 {
-  "lastRun": "2026-09-28",
+  "lastRun": "2026-10-05",
   "sources": {
     "NHBRC \u2014 homepage / news block": {
       "len": 180584,
-      "hash": "f64e8f6cf4d7c27f",
+      "hash": "3c05444cf7c45a2d",
       "keywordHits": 4,
       "headlinesSample": [
-        "nhbrc",
-        "NHBRC"
+        "NHBRC",
+        "nhbrc"
       ],
       "url": "https://www.nhbrc.org.za/",
-      "fetchedAt": "2026-09-28",
+      "fetchedAt": "2026-10-05",
       "status": 200
     },
     "NHBRC \u2014 Publications": {
       "len": 100401,
-      "hash": "def28fd2b98cfde0",
+      "hash": "c3046f8f1975ebcc",
       "keywordHits": 80,
       "headlinesSample": [
-        "nhbrc",
-        "NHBRC"
+        "NHBRC",
+        "nhbrc"
       ],
       "url": "https://www.nhbrc.org.za/publications/",
-      "fetchedAt": "2026-09-28",
+      "fetchedAt": "2026-10-05",
       "status": 200
     },
     "Government Gazette \u2014 Subordinate Legislation index": {
-      "len": 80218,
-      "hash": "262234110055b441",
-      "keywordHits": 35,
+      "len": 79564,
+      "hash": "f0ada8f6769fbaf2",
+      "keywordHits": 34,
       "headlinesSample": [
         "Government Gazette"
       ],
       "url": "https://www.gov.za/documents/notices?keys=building+regulations",
-      "fetchedAt": "2026-09-28",
+      "fetchedAt": "2026-10-05",
       "status": 200
     },
     "SABS Webstore \u2014 SANS 10400 catalogue": {
-      "len": 200311,
-      "hash": "a7fdf951ed96bf37",
+      "len": 200290,
+      "hash": "04f9eb83ee1703f5",
       "keywordHits": 63,
       "headlinesSample": [
-        "sans 10400",
         "SANS 10400",
+        "sans 10400",
         "national building regulation"
       ],
       "url": "https://store.sabs.co.za/sans-10400-the-application-of-the-national-building-regulations",
-      "fetchedAt": "2026-09-28",
+      "fetchedAt": "2026-10-05",
       "status": 200
     },
     "Engineering News \u2014 construction tag": {
-      "len": 410087,
-      "hash": "b2fefce7c500cd88",
+      "len": 404877,
+      "hash": "1a907f902e76efc7",
       "keywordHits": 0,
       "headlinesSample": [],
       "url": "https://www.engineeringnews.co.za/page/construction",
-      "fetchedAt": "2026-09-28",
+      "fetchedAt": "2026-10-05",
       "status": 200
     },
     "sans10400.co.za blog index": {
