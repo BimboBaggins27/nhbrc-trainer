@@ -1,4 +1,4 @@
-# Regulations watch — 2026-10-12
+# Regulations watch — 2026-10-19
 
 Sources scanned: 7. Detected 5 change(s), 1 error(s).
 
@@ -8,11 +8,11 @@ Sources scanned: 7. Detected 5 change(s), 1 error(s).
    https://www.nhbrc.org.za/
 🔄 **NHBRC — Publications** — content changed (Δ +0 bytes, 80→80 keyword hits)
    https://www.nhbrc.org.za/publications/
-🔄 **Government Gazette — Subordinate Legislation index** — content changed (Δ -631 bytes, 34→31 keyword hits)
+🔄 **Government Gazette — Subordinate Legislation index** — content changed (Δ -437 bytes, 31→43 keyword hits)
    https://www.gov.za/documents/notices?keys=building+regulations
-🔄 **SABS Webstore — SANS 10400 catalogue** — content changed (Δ +1 bytes, 63→63 keyword hits)
+🔄 **SABS Webstore — SANS 10400 catalogue** — content changed (Δ +6 bytes, 63→63 keyword hits)
    https://store.sabs.co.za/sans-10400-the-application-of-the-national-building-regulations
-🔄 **Engineering News — construction tag** — content changed (Δ -1,678 bytes, 0→0 keyword hits)
+🔄 **Engineering News — construction tag** — content changed (Δ +737 bytes, 0→0 keyword hits)
    https://www.engineeringnews.co.za/page/construction
 
 👉 Review each diff. If a change touches the trainer's content, open a PR updating the relevant module/quiz/regulation entry and bump the SW version.
