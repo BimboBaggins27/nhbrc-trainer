@@ -1,28 +1,28 @@
 {
-  "lastRun": "2026-11-09",
+  "lastRun": "2026-11-16",
   "sources": {
     "NHBRC \u2014 homepage / news block": {
       "len": 180584,
-      "hash": "b528061fe2a5b45a",
+      "hash": "13a85fd2ff2636b8",
       "keywordHits": 4,
       "headlinesSample": [
-        "NHBRC",
-        "nhbrc"
+        "nhbrc",
+        "NHBRC"
       ],
       "url": "https://www.nhbrc.org.za/",
-      "fetchedAt": "2026-11-09",
+      "fetchedAt": "2026-11-16",
       "status": 200
     },
     "NHBRC \u2014 Publications": {
       "len": 100401,
-      "hash": "c3360ca11fbd1c71",
+      "hash": "65d43031ffa93b47",
       "keywordHits": 80,
       "headlinesSample": [
-        "NHBRC",
-        "nhbrc"
+        "nhbrc",
+        "NHBRC"
       ],
       "url": "https://www.nhbrc.org.za/publications/",
-      "fetchedAt": "2026-11-09",
+      "fetchedAt": "2026-11-16",
       "status": 200
     },
     "Government Gazette \u2014 Subordinate Legislation index": {
@@ -37,8 +37,8 @@
       "status": 200
     },
     "SABS Webstore \u2014 SANS 10400 catalogue": {
-      "len": 200303,
-      "hash": "ae42868f25256e3c",
+      "len": 200304,
+      "hash": "cf620a54bbf8296b",
       "keywordHits": 63,
       "headlinesSample": [
         "sans 10400",
@@ -46,16 +46,16 @@
         "national building regulation"
       ],
       "url": "https://store.sabs.co.za/sans-10400-the-application-of-the-national-building-regulations",
-      "fetchedAt": "2026-11-09",
+      "fetchedAt": "2026-11-16",
       "status": 200
     },
     "Engineering News \u2014 construction tag": {
-      "len": 407778,
-      "hash": "55c022b7819165b8",
+      "len": 407312,
+      "hash": "83ce7e1a7ce777db",
       "keywordHits": 0,
       "headlinesSample": [],
       "url": "https://www.engineeringnews.co.za/page/construction",
-      "fetchedAt": "2026-11-09",
+      "fetchedAt": "2026-11-16",
       "status": 200
     },
     "sans10400.co.za blog index": {
@@ -67,7 +67,7 @@
         "nhbrc"
       ],
       "url": "https://www.sans10400.co.za/wp-sitemap-posts-post-1.xml",
-      "fetchedAt": "2026-11-09",
+      "fetchedAt": "2026-11-16",
       "status": 200
     },
     "Cape Town building plans page (LA reference)": {
